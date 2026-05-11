@@ -12,26 +12,28 @@ A macOS menu-bar dictation app. Hold a key to talk, release to paste the cleaned
 ## Project layout
 
 ```
-Stro Speak/                     Xcode project
-└── Stro Speak/                 Source root (file-system synchronized group)
-    ├── App/                    Entry point, AppDelegate, AppState
-    ├── Audio/                  Recording, level metering, device monitoring
-    ├── Transcription/          Transcription + LLM cleanup + context capture
-    ├── Hotkeys/                Global hotkey + shortcut matcher state machine
-    ├── UI/                     MenuBarView, SettingsView, SetupView, RecordingOverlay
-    ├── Storage/                Keychain-backed settings
-    ├── Support/                Pipeline history, notifications, helpers
-    ├── Updates/                Update manager (currently a no-op placeholder)
-    ├── Assets.xcassets         App icon / accent color (placeholder — needs assets)
-    └── StroSpeak.entitlements  Hardened-runtime entitlements (audio input)
+Stro Speak.xcodeproj/           Xcode project
+Stro Speak/                     Source root (file-system synchronized group)
+├── App/                        Entry point, AppDelegate, AppState
+├── Audio/                      Recording, level metering, device monitoring
+├── Transcription/              Transcription + LLM cleanup + context capture
+├── Hotkeys/                    Global hotkey + shortcut matcher state machine
+├── UI/                         MenuBarView, SettingsView, SetupView, RecordingOverlay
+├── Storage/                    Keychain-backed settings
+├── Support/                    Pipeline history, notifications, helpers
+├── Updates/                    Update manager (currently a no-op placeholder)
+├── Assets.xcassets             App icon / accent color (placeholder — needs assets)
+└── StroSpeak.entitlements      Hardened-runtime entitlements (audio input)
+Stro SpeakTests/                Unit test target
+Stro SpeakUITests/              UI test target
 ```
 
 ## Build & run
 
-Requires Xcode targeting the macOS SDK matching `MACOSX_DEPLOYMENT_TARGET` in `Stro Speak/Stro Speak.xcodeproj`.
+Requires Xcode targeting the macOS SDK matching `MACOSX_DEPLOYMENT_TARGET` in `Stro Speak.xcodeproj`.
 
 ```
-open "Stro Speak/Stro Speak.xcodeproj"
+open "Stro Speak.xcodeproj"
 ```
 
 The app runs un-sandboxed (required for global hotkey, accessibility, and paste-to-frontmost-app) with hardened runtime on. First launch will prompt for Microphone, Accessibility, and Screen Recording permissions.
