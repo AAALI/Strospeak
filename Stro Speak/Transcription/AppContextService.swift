@@ -29,19 +29,33 @@ struct AppContext {
 
 final class AppContextService {
     static let defaultContextPrompt = """
-You are a context synthesis assistant for a speech-to-text pipeline.
-Given app/window metadata and an optional screenshot, output exactly two sentences that describe what the user is doing right now and the likely writing intent in the current window.
-Prioritize concrete details only from the context: for email, identify recipients, subject or thread cues, and whether the user is replying or composing; for terminal/code/text work, identify the active command, file, document title, or topic.
-If details are missing, state uncertainty instead of inventing facts.
-Return only two sentences, no labels, no markdown, no extra commentary.
+You are a context classifier for a dictation pipeline.
+
+Given app metadata, selected text, user profile details, window title, and optional screenshot, return a compact context brief.
+
+Include:
+App:
+Surface:
+Writing destination:
+Likely intent:
+Tone expectation:
+Formatting hint:
+Visible names or terms:
+User profile:
+Uncertainty:
+
+Use concrete evidence only. Do not invent recipients, names, or document content.
+Keep it under 120 words.
 """
-    static let defaultContextPromptDate = "2026-02-24"
+    static let defaultContextPromptDate = "2026-05-11"
     static let defaultScreenshotMaxDimension: CGFloat = 1024
 
     private let apiKey: String
     private let baseURL: String
     private let customContextPrompt: String
     private let contextModel: String
+    private let userDisplayName: String
+    private let userProfileNote: String
     private let maxScreenshotDataURILength = 500_000
     private let screenshotCompressionPrimary = 0.5
     private let screenshotMaxDimension: CGFloat
@@ -52,13 +66,17 @@ Return only two sentences, no labels, no markdown, no extra commentary.
         baseURL: String = "https://api.groq.com/openai/v1",
         customContextPrompt: String = "",
         contextModel: String = "meta-llama/llama-4-scout-17b-16e-instruct",
-        screenshotMaxDimension: CGFloat = AppContextService.defaultScreenshotMaxDimension
+        screenshotMaxDimension: CGFloat = AppContextService.defaultScreenshotMaxDimension,
+        userDisplayName: String = "",
+        userProfileNote: String = ""
     ) {
         self.apiKey = apiKey
         self.baseURL = baseURL
         self.customContextPrompt = customContextPrompt
         let trimmedModel = contextModel.trimmingCharacters(in: .whitespacesAndNewlines)
         self.contextModel = trimmedModel.isEmpty ? "meta-llama/llama-4-scout-17b-16e-instruct" : trimmedModel
+        self.userDisplayName = userDisplayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.userProfileNote = userProfileNote.trimmingCharacters(in: .whitespacesAndNewlines)
         self.screenshotMaxDimension = screenshotMaxDimension > 0
             ? screenshotMaxDimension
             : AppContextService.defaultScreenshotMaxDimension
@@ -223,18 +241,20 @@ App: \(appName ?? "Unknown")
 Bundle ID: \(bundleIdentifier ?? "Unknown")
 Window: \(windowTitle ?? "Unknown")
 Selected text: \(selectedText ?? "None")
+User display name: \(userDisplayName.isEmpty ? "Unknown" : userDisplayName)
+User profile note: \(userProfileNote.isEmpty ? "None" : userProfileNote)
 """
 
-            let textOnlyPrompt = "Analyze the context and infer the user's current activity in exactly two sentences.\n\n\(metadata)"
+            let textOnlyPrompt = "Analyze the context and return a compact context brief.\n\n\(metadata)"
             var userMessageDescription: String
             var userMessage: Any = textOnlyPrompt
 
             if let screenshotDataURL {
-                userMessageDescription = "[screenshot attached]\nAnalyze the screenshot plus metadata to infer current activity.\n\(metadata)"
+                userMessageDescription = "[screenshot attached]\nAnalyze the screenshot plus metadata and return a compact context brief.\n\(metadata)"
                 userMessage = [
                     [
                         "type": "text",
-                        "text": "Analyze the screenshot plus metadata to infer current activity."
+                        "text": "Analyze the screenshot plus metadata and return a compact context brief."
                     ],
                     [
                         "type": "text",
@@ -285,17 +305,14 @@ Selected text: \(selectedText ?? "None")
     }
 
     private func normalizedActivitySummary(_ value: String) -> String {
-        let sentences = value
-            .split(whereSeparator: { $0 == "." || $0 == "。" || $0 == "!" || $0 == "?" })
+        let lines = value
+            .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-
-        if sentences.count <= 2 {
-            return value
-        }
-
-        let firstTwo = sentences.prefix(2)
-        return firstTwo.joined(separator: ". ") + "."
+        let normalized = lines.isEmpty ? value.trimmingCharacters(in: .whitespacesAndNewlines) : lines.joined(separator: "\n")
+        let words = normalized.split(whereSeparator: { $0.isWhitespace })
+        guard words.count > 140 else { return normalized }
+        return words.prefix(140).joined(separator: " ")
     }
 
     private func fallbackCurrentActivity(

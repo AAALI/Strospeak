@@ -216,6 +216,8 @@ final class AppState: ObservableObject, @unchecked Sendable {
     private let customContextPromptStorageKey = "custom_context_prompt"
     private let customSystemPromptLastModifiedStorageKey = "custom_system_prompt_last_modified"
     private let customContextPromptLastModifiedStorageKey = "custom_context_prompt_last_modified"
+    private let userDisplayNameStorageKey = "user_display_name"
+    private let userProfileNoteStorageKey = "user_profile_note"
     private let contextScreenshotMaxDimensionStorageKey = "context_screenshot_max_dimension"
     private let shortcutStartDelayStorageKey = "shortcut_start_delay"
     private let preserveClipboardStorageKey = "preserve_clipboard"
@@ -433,6 +435,20 @@ final class AppState: ObservableObject, @unchecked Sendable {
         }
     }
 
+    @Published var userDisplayName: String {
+        didSet {
+            UserDefaults.standard.set(userDisplayName, forKey: userDisplayNameStorageKey)
+            rebuildContextService()
+        }
+    }
+
+    @Published var userProfileNote: String {
+        didSet {
+            UserDefaults.standard.set(userProfileNote, forKey: userProfileNoteStorageKey)
+            rebuildContextService()
+        }
+    }
+
     @Published var outputLanguage: String {
         didSet {
             UserDefaults.standard.set(outputLanguage, forKey: outputLanguageStorageKey)
@@ -615,6 +631,8 @@ final class AppState: ObservableObject, @unchecked Sendable {
         let customContextPrompt = UserDefaults.standard.string(forKey: customContextPromptStorageKey) ?? ""
         let customSystemPromptLastModified = UserDefaults.standard.string(forKey: customSystemPromptLastModifiedStorageKey) ?? ""
         let customContextPromptLastModified = UserDefaults.standard.string(forKey: customContextPromptLastModifiedStorageKey) ?? ""
+        let userDisplayName = UserDefaults.standard.string(forKey: userDisplayNameStorageKey) ?? ""
+        let userProfileNote = UserDefaults.standard.string(forKey: userProfileNoteStorageKey) ?? ""
         let outputLanguage = UserDefaults.standard.string(forKey: outputLanguageStorageKey) ?? ""
         let storedContextScreenshotMaxDimension = UserDefaults.standard.object(forKey: contextScreenshotMaxDimensionStorageKey) != nil
             ? UserDefaults.standard.integer(forKey: contextScreenshotMaxDimensionStorageKey)
@@ -675,7 +693,9 @@ final class AppState: ObservableObject, @unchecked Sendable {
             baseURL: apiBaseURL,
             customContextPrompt: customContextPrompt,
             contextModel: contextModel,
-            contextScreenshotMaxDimension: contextScreenshotMaxDimension
+            contextScreenshotMaxDimension: contextScreenshotMaxDimension,
+            userDisplayName: userDisplayName,
+            userProfileNote: userProfileNote
         )
         self.hasCompletedSetup = hasCompletedSetup
         self.apiKey = apiKey
@@ -700,6 +720,8 @@ final class AppState: ObservableObject, @unchecked Sendable {
         self.contextScreenshotMaxDimension = contextScreenshotMaxDimension
         self.customSystemPromptLastModified = customSystemPromptLastModified
         self.customContextPromptLastModified = customContextPromptLastModified
+        self.userDisplayName = userDisplayName
+        self.userProfileNote = userProfileNote
         self.outputLanguage = outputLanguage
         self.shortcutStartDelay = shortcutStartDelay
         self.preserveClipboard = preserveClipboard
@@ -861,14 +883,18 @@ final class AppState: ObservableObject, @unchecked Sendable {
         baseURL: String,
         customContextPrompt: String,
         contextModel: String,
-        contextScreenshotMaxDimension: Int
+        contextScreenshotMaxDimension: Int,
+        userDisplayName: String,
+        userProfileNote: String
     ) -> AppContextService {
         AppContextService(
             apiKey: apiKey,
             baseURL: baseURL,
             customContextPrompt: customContextPrompt,
             contextModel: contextModel,
-            screenshotMaxDimension: CGFloat(normalizedContextScreenshotMaxDimension(contextScreenshotMaxDimension))
+            screenshotMaxDimension: CGFloat(normalizedContextScreenshotMaxDimension(contextScreenshotMaxDimension)),
+            userDisplayName: userDisplayName,
+            userProfileNote: userProfileNote
         )
     }
 
@@ -878,7 +904,9 @@ final class AppState: ObservableObject, @unchecked Sendable {
             baseURL: apiBaseURL,
             customContextPrompt: customContextPrompt,
             contextModel: contextModel,
-            contextScreenshotMaxDimension: contextScreenshotMaxDimension
+            contextScreenshotMaxDimension: contextScreenshotMaxDimension,
+            userDisplayName: userDisplayName,
+            userProfileNote: userProfileNote
         )
     }
 
