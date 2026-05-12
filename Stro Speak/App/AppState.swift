@@ -22,36 +22,33 @@ struct PrecomputedMacro {
 
 enum SettingsTab: String, CaseIterable, Identifiable {
     case general
-    case prompts
-    case macros
-    case runLog
-    case debug
+    case dictation
+    case personalization
+    case account
+    case privacy
+    case developer
 
     var id: String { rawValue }
-
-    static var visibleCases: [SettingsTab] {
-        allCases.filter { tab in
-            tab != .debug || AppBuild.isDevBundle
-        }
-    }
 
     var title: String {
         switch self {
         case .general: return "General"
-        case .prompts: return "Prompts"
-        case .macros: return "Voice Macros"
-        case .runLog: return "Run Log"
-        case .debug: return "Debug"
+        case .dictation: return "Dictation"
+        case .personalization: return "Personalization"
+        case .account: return "Account"
+        case .privacy: return "Privacy"
+        case .developer: return "Developer"
         }
     }
 
     var icon: String {
         switch self {
         case .general: return "gearshape"
-        case .prompts: return "text.bubble"
-        case .macros: return "music.mic"
-        case .runLog: return "clock.arrow.circlepath"
-        case .debug: return "wrench.and.screwdriver"
+        case .dictation: return "mic"
+        case .personalization: return "person.text.rectangle"
+        case .account: return "person.crop.circle"
+        case .privacy: return "lock.shield"
+        case .developer: return "wrench.and.screwdriver"
         }
     }
 }
@@ -218,6 +215,12 @@ final class AppState: ObservableObject, @unchecked Sendable {
     private let customContextPromptLastModifiedStorageKey = "custom_context_prompt_last_modified"
     private let userDisplayNameStorageKey = "user_display_name"
     private let userProfileNoteStorageKey = "user_profile_note"
+    private let developerSettingsUnlockedStorageKey = "developer_settings_unlocked"
+    private let accountEmailStorageKey = "account_email"
+    private let accountPlanNameStorageKey = "account_plan_name"
+    private let accountUsageStatusStorageKey = "account_usage_status"
+    private let accountManageBillingURLStorageKey = "account_manage_billing_url"
+    private let accountSignedInStorageKey = "account_signed_in"
     private let contextScreenshotMaxDimensionStorageKey = "context_screenshot_max_dimension"
     private let shortcutStartDelayStorageKey = "shortcut_start_delay"
     private let preserveClipboardStorageKey = "preserve_clipboard"
@@ -449,6 +452,46 @@ final class AppState: ObservableObject, @unchecked Sendable {
         }
     }
 
+    @Published var developerSettingsUnlocked: Bool {
+        didSet {
+            UserDefaults.standard.set(developerSettingsUnlocked, forKey: developerSettingsUnlockedStorageKey)
+        }
+    }
+
+    var shouldShowDeveloperSettings: Bool {
+        AppBuild.isDevBundle || developerSettingsUnlocked
+    }
+
+    @Published var accountEmail: String {
+        didSet {
+            UserDefaults.standard.set(accountEmail, forKey: accountEmailStorageKey)
+        }
+    }
+
+    @Published var planName: String {
+        didSet {
+            UserDefaults.standard.set(planName, forKey: accountPlanNameStorageKey)
+        }
+    }
+
+    @Published var usageStatusText: String {
+        didSet {
+            UserDefaults.standard.set(usageStatusText, forKey: accountUsageStatusStorageKey)
+        }
+    }
+
+    @Published var manageBillingURL: String {
+        didSet {
+            UserDefaults.standard.set(manageBillingURL, forKey: accountManageBillingURLStorageKey)
+        }
+    }
+
+    @Published var isSignedIn: Bool {
+        didSet {
+            UserDefaults.standard.set(isSignedIn, forKey: accountSignedInStorageKey)
+        }
+    }
+
     @Published var outputLanguage: String {
         didSet {
             UserDefaults.standard.set(outputLanguage, forKey: outputLanguageStorageKey)
@@ -538,6 +581,7 @@ final class AppState: ObservableObject, @unchecked Sendable {
     @Published var hotkeyMonitoringErrorMessage: String?
     @Published var isDebugOverlayActive = false
     @Published var selectedSettingsTab: SettingsTab? = .general
+    @Published var selectedDeveloperSettingsSection: String = "Provider"
     @Published var pipelineHistory: [PipelineHistoryItem] = []
     @Published var debugStatusMessage = "Idle"
     @Published var debugShowsUpdateReminderAfterDictation = false
@@ -633,6 +677,12 @@ final class AppState: ObservableObject, @unchecked Sendable {
         let customContextPromptLastModified = UserDefaults.standard.string(forKey: customContextPromptLastModifiedStorageKey) ?? ""
         let userDisplayName = UserDefaults.standard.string(forKey: userDisplayNameStorageKey) ?? ""
         let userProfileNote = UserDefaults.standard.string(forKey: userProfileNoteStorageKey) ?? ""
+        let developerSettingsUnlocked = UserDefaults.standard.bool(forKey: developerSettingsUnlockedStorageKey)
+        let accountEmail = UserDefaults.standard.string(forKey: accountEmailStorageKey) ?? ""
+        let planName = UserDefaults.standard.string(forKey: accountPlanNameStorageKey) ?? ""
+        let usageStatusText = UserDefaults.standard.string(forKey: accountUsageStatusStorageKey) ?? ""
+        let manageBillingURL = UserDefaults.standard.string(forKey: accountManageBillingURLStorageKey) ?? ""
+        let isSignedIn = UserDefaults.standard.bool(forKey: accountSignedInStorageKey)
         let outputLanguage = UserDefaults.standard.string(forKey: outputLanguageStorageKey) ?? ""
         let storedContextScreenshotMaxDimension = UserDefaults.standard.object(forKey: contextScreenshotMaxDimensionStorageKey) != nil
             ? UserDefaults.standard.integer(forKey: contextScreenshotMaxDimensionStorageKey)
@@ -722,6 +772,12 @@ final class AppState: ObservableObject, @unchecked Sendable {
         self.customContextPromptLastModified = customContextPromptLastModified
         self.userDisplayName = userDisplayName
         self.userProfileNote = userProfileNote
+        self.developerSettingsUnlocked = developerSettingsUnlocked
+        self.accountEmail = accountEmail
+        self.planName = planName
+        self.usageStatusText = usageStatusText
+        self.manageBillingURL = manageBillingURL
+        self.isSignedIn = isSignedIn
         self.outputLanguage = outputLanguage
         self.shortcutStartDelay = shortcutStartDelay
         self.preserveClipboard = preserveClipboard
@@ -2261,7 +2317,7 @@ final class AppState: ObservableObject, @unchecked Sendable {
         func statusMessage(isRetry: Bool = false) -> String {
             switch self {
             case .skippedEmptyRawTranscript:
-                return "Skipped macros and post-processing for empty raw transcript"
+                return "Skipped cleanup for empty raw transcript"
             case .voiceMacro(let command):
                 return "Voice macro used: \(command)"
             case .postProcessingSucceeded:
@@ -2461,7 +2517,7 @@ final class AppState: ObservableObject, @unchecked Sendable {
                     }
                     try Task.checkCancellation()
                     await MainActor.run { [weak self] in
-                        self?.debugStatusMessage = "Running post-processing"
+                        self?.debugStatusMessage = "Cleaning up text"
                     }
                     let result = await self.processTranscript(
                         parsedTranscript.transcript,
@@ -2729,7 +2785,7 @@ final class AppState: ObservableObject, @unchecked Sendable {
             bundleIdentifier: frontmostApp?.bundleIdentifier,
             windowTitle: windowTitle,
             selectedText: nil,
-            currentActivity: "Could not refresh app context at stop time; using text-only post-processing.",
+            currentActivity: "Could not refresh app context at stop time; using text-only cleanup.",
             contextSystemPrompt: resolvedContextSystemPrompt(),
             contextPrompt: nil,
             screenshotDataURL: nil,
@@ -2958,7 +3014,9 @@ final class AppState: ObservableObject, @unchecked Sendable {
     }
 
     func toggleDebugPanel() {
-        selectedSettingsTab = .runLog
+        developerSettingsUnlocked = true
+        selectedSettingsTab = .developer
+        selectedDeveloperSettingsSection = "Debug"
         NotificationCenter.default.post(name: .showSettings, object: nil)
     }
 

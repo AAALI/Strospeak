@@ -42,7 +42,9 @@ struct MenuBarView: View {
     }
 
     private func openRunLog() {
-        appState.selectedSettingsTab = .runLog
+        appState.developerSettingsUnlocked = true
+        appState.selectedSettingsTab = .developer
+        appState.selectedDeveloperSettingsSection = "Run Log"
         NotificationCenter.default.post(name: .showSettings, object: nil)
     }
 
@@ -168,11 +170,15 @@ struct MenuBarView: View {
                         .disabled(transcript.isEmpty)
                     }
 
-                    Divider()
+                    if appState.shouldShowDeveloperSettings {
+                        Divider()
+                    }
                 }
 
-                Button("Open Run Log") {
-                    openRunLog()
+                if appState.shouldShowDeveloperSettings {
+                    Button("Open Run Log") {
+                        openRunLog()
+                    }
                 }
             }
 

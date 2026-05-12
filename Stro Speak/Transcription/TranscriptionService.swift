@@ -183,25 +183,23 @@ class TranscriptionService {
     }
 
     /// Map a non-200 HTTP status into a one-line user-readable message.
-    /// Used for transcription submission failures so the menu bar shows
-    /// "Invalid API key for api.openai.com" instead of raw JSON.
     static func friendlyHTTPMessage(status: Int, host: String?) -> String {
-        let provider = host ?? "the provider"
+        let service = host ?? "the service"
         switch status {
         case 401:
-            return "Invalid API key for \(provider). Open Settings to fix it."
+            return "Could not connect to \(AppName.displayName)'s speech service. Please sign in again or contact support."
         case 403:
-            return "Key lacks permission for this endpoint at \(provider) (HTTP 403). Check the key's scopes."
+            return "Your account does not have access to this speech service yet."
         case 404:
-            return "Endpoint not found at \(provider) (HTTP 404). Base URL is likely wrong for this provider."
+            return "The speech service endpoint could not be reached."
         case 413:
-            return "Audio file too large for \(provider) (HTTP 413). Try a shorter recording."
+            return "Audio file too large for \(service). Try a shorter recording."
         case 429:
-            return "Rate limit reached at \(provider) (HTTP 429). Wait a moment and try again."
+            return "Usage limit reached. Wait a moment and try again."
         case 500..<600:
-            return "Provider error at \(provider) (HTTP \(status)). Try again in a moment."
+            return "\(AppName.displayName)'s speech service is unavailable. Try again in a moment."
         default:
-            return "Request failed at \(provider) (HTTP \(status))."
+            return "Speech request failed (HTTP \(status))."
         }
     }
 

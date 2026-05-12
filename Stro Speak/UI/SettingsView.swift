@@ -400,10 +400,16 @@ struct ProviderSettingsFields: View {
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
 
+    private var visibleTabs: [SettingsTab] {
+        SettingsTab.allCases.filter { tab in
+            tab != .developer || appState.shouldShowDeveloperSettings
+        }
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 2) {
-                ForEach(SettingsTab.visibleCases) { tab in
+                ForEach(visibleTabs) { tab in
                     Button {
                         appState.selectedSettingsTab = tab
                     } label: {
@@ -429,19 +435,40 @@ struct SettingsView: View {
             Group {
                 switch appState.selectedSettingsTab {
                 case .general, .none:
-                    GeneralSettingsView()
-                case .prompts:
-                    PromptsSettingsView()
-                case .macros:
-                    VoiceMacrosSettingsView()
-                case .runLog:
-                    RunLogView()
-                case .debug:
-                    DebugSettingsView()
+                    GeneralSettingsView(page: .general)
+                case .dictation:
+                    GeneralSettingsView(page: .dictation)
+                case .personalization:
+                    GeneralSettingsView(page: .personalization)
+                case .account:
+                    GeneralSettingsView(page: .account)
+                case .privacy:
+                    GeneralSettingsView(page: .privacy)
+                case .developer:
+                    DeveloperSettingsView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .onAppear {
+            if appState.selectedSettingsTab == .developer && !appState.shouldShowDeveloperSettings {
+                appState.selectedSettingsTab = .general
+            }
+        }
+        .onChange(of: appState.developerSettingsUnlocked) { _ in
+            if appState.selectedSettingsTab == .developer && !appState.shouldShowDeveloperSettings {
+                appState.selectedSettingsTab = .general
+            }
+        }
+        .background(
+            Button("") {
+                appState.developerSettingsUnlocked.toggle()
+                appState.selectedSettingsTab = appState.shouldShowDeveloperSettings ? .developer : .general
+            }
+            .keyboardShortcut("d", modifiers: [.command, .option])
+            .opacity(0)
+            .frame(width: 0, height: 0)
+        )
     }
 }
 
@@ -512,9 +539,19 @@ struct DebugSettingsView: View {
 
 // MARK: - General Settings
 
+enum GeneralSettingsPage {
+    case general
+    case dictation
+    case personalization
+    case account
+    case privacy
+    case developer
+}
+
 struct GeneralSettingsView: View {
     @EnvironmentObject var appState: AppState
     @AppStorage("show_menu_bar_icon") private var showMenuBarIcon = true
+    let page: GeneralSettingsPage
     @State private var apiKeyInput: String = ""
     @State private var apiBaseURLInput: String = ""
     @State private var transcriptionAPIURLInput: String = ""
@@ -569,107 +606,29 @@ struct GeneralSettingsView: View {
         NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
     }
 
+    private var appHeader: some View {
+        VStack(spacing: 12) {
+            Image(nsImage: settingsAppIcon)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 64, height: 64)
+
+            Text(AppName.displayName)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+
+            Text("v\(appVersion)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
+        .padding(.bottom, 4)
+    }
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // App branding header
-                VStack(spacing: 12) {
-                    Image(nsImage: settingsAppIcon)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 64, height: 64)
-
-                    Text(AppName.displayName)
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-
-                    Text("v\(appVersion)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Label("Personal Context", systemImage: "person.text.rectangle")
-                            .font(.caption.weight(.semibold))
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Name")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            TextField("Your name", text: $appState.userDisplayName)
-                                .textFieldStyle(.roundedBorder)
-                        }
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Quick note")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            TextEditor(text: $appState.userProfileNote)
-                                .font(.body)
-                                .frame(minHeight: 58, maxHeight: 88)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
-                                )
-                        }
-
-                        Text("Used as private context for better names, tone, and sign-offs. Keep it short.")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                            )
-                    )
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 4)
-                .padding(.bottom, 4)
-
-                SettingsCard("App", icon: "power") {
-                    startupSection
-                }
-                SettingsCard("Updates", icon: "arrow.triangle.2.circlepath") {
-                    updatesSection
-                }
-                SettingsCard("API Key", icon: "key.fill") {
-                    apiKeySection
-                }
-                SettingsCard("Output Language", icon: "globe") {
-                    outputLanguageSection
-                }
-                SettingsCard("Dictation Shortcuts", icon: "keyboard.fill") {
-                    hotkeySection
-                }
-                SettingsCard("Audio During Dictation", icon: "speaker.slash.fill") {
-                    dictationAudioSection
-                }
-                SettingsCard("Edit Mode", icon: "pencil") {
-                    commandModeSection
-                }
-                SettingsCard("Clipboard", icon: "doc.on.clipboard") {
-                    clipboardSection
-                }
-                SettingsCard("Microphone", icon: "mic.fill") {
-                    microphoneSection
-                }
-                SettingsCard("Sound Volume", icon: "speaker.wave.2.fill") {
-                    soundVolumeSection
-                }
-                SettingsCard("Custom Vocabulary", icon: "text.book.closed.fill") {
-                    vocabularySection
-                }
-                SettingsCard("Permissions", icon: "lock.shield.fill") {
-                    permissionsSection
-                }
-                SettingsCard("Build", icon: "info.circle.fill") {
-                    buildInfoSection
-                }
-            }
-            .padding(24)
+            pageContent
+                .padding(24)
         }
         .onAppear {
             apiKeyInput = appState.apiKey
@@ -692,7 +651,168 @@ struct GeneralSettingsView: View {
         }
     }
 
+    @ViewBuilder
+    private var pageContent: some View {
+        switch page {
+        case .general:
+            VStack(spacing: 20) {
+                appHeader
+                SettingsCard("App", icon: "power") {
+                    startupSection
+                }
+                SettingsCard("Updates", icon: "arrow.triangle.2.circlepath") {
+                    updatesSection
+                }
+            }
+        case .dictation:
+            VStack(spacing: 20) {
+                SettingsCard("Dictation Shortcuts", icon: "keyboard.fill") {
+                    hotkeySection
+                }
+                SettingsCard("Microphone", icon: "mic.fill") {
+                    microphoneSection
+                }
+                SettingsCard("Sound Volume", icon: "speaker.wave.2.fill") {
+                    soundVolumeSection
+                }
+                SettingsCard("Audio During Dictation", icon: "speaker.slash.fill") {
+                    dictationAudioSection
+                }
+                SettingsCard("Edit Mode", icon: "pencil") {
+                    commandModeSection
+                }
+                SettingsCard("Submit After Dictation", icon: "return") {
+                    submitAfterPasteSection
+                }
+            }
+        case .personalization:
+            VStack(spacing: 20) {
+                SettingsCard("Personal Context", icon: "person.text.rectangle") {
+                    personalContextSection
+                }
+                SettingsCard("Custom Vocabulary", icon: "text.book.closed.fill") {
+                    vocabularySection
+                }
+                SettingsCard("Output Language", icon: "globe") {
+                    outputLanguageSection
+                }
+            }
+        case .account:
+            VStack(spacing: 20) {
+                SettingsCard("Account", icon: "person.crop.circle.fill") {
+                    accountSection
+                }
+            }
+        case .privacy:
+            VStack(spacing: 20) {
+                SettingsCard("Permissions", icon: "lock.shield.fill") {
+                    permissionsSection
+                }
+                SettingsCard("Screen Context", icon: "eye.fill") {
+                    screenContextPrivacySection
+                }
+                SettingsCard("Clipboard", icon: "doc.on.clipboard") {
+                    clipboardPrivacySection
+                }
+            }
+        case .developer:
+            VStack(spacing: 20) {
+                SettingsCard("Developer Access", icon: "wrench.and.screwdriver") {
+                    developerAccessSection
+                }
+                SettingsCard("API Provider", icon: "key.fill") {
+                    apiKeySection
+                }
+                SettingsCard("Build", icon: "info.circle.fill") {
+                    buildInfoSection
+                }
+            }
+        }
+    }
+
     // MARK: Startup
+
+    private var personalContextSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Name")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                TextField("Your name", text: $appState.userDisplayName)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Quick note")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                TextEditor(text: $appState.userProfileNote)
+                    .font(.body)
+                    .frame(minHeight: 58, maxHeight: 88)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    )
+            }
+
+            Text("Used privately to improve names, tone, and sign-offs. Keep it short.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if appState.isSignedIn {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(appState.accountEmail.isEmpty ? "Signed in" : appState.accountEmail)
+                            .font(.headline)
+                        Text(appState.planName.isEmpty ? "Plan unavailable" : appState.planName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Sign Out") {
+                        appState.isSignedIn = false
+                        appState.accountEmail = ""
+                    }
+                }
+
+                Text(appState.usageStatusText.isEmpty ? "Usage information is unavailable." : appState.usageStatusText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                if let url = URL(string: appState.manageBillingURL), !appState.manageBillingURL.isEmpty {
+                    Button("Manage Billing") {
+                        NSWorkspace.shared.open(url)
+                    }
+                } else {
+                    Button("Manage Billing") {}
+                        .disabled(true)
+                    Text("Billing management will appear here when your subscription is connected.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                HStack(spacing: 10) {
+                    Image(systemName: "person.crop.circle.badge.exclamationmark")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Signed out")
+                            .font(.headline)
+                        Text("Account sign-in and subscription usage will appear here when the hosted service is connected.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Button("Sign In") {}
+                    .disabled(true)
+            }
+        }
+    }
 
     private var startupSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -1130,6 +1250,58 @@ struct GeneralSettingsView: View {
         }
     }
 
+    private var clipboardPrivacySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle("Preserve clipboard after paste", isOn: $appState.preserveClipboard)
+
+            Text("\(AppName.displayName) temporarily uses your clipboard to paste the transcript, then restores what was there before.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var submitAfterPasteSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle("Say \"press enter\" to submit after paste", isOn: $appState.isPressEnterVoiceCommandEnabled)
+
+            Text("When your dictation ends with \"press enter\", \(AppName.displayName) removes those words, pastes the text, then presses Return.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var screenContextPrivacySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("\(AppName.displayName) can use the active app, selected text, and visible window context to format dictation more naturally.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text("This is why Screen Recording and Accessibility permissions are requested. Usage should be routed through the hosted \(AppName.displayName) service for commercial builds.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var developerAccessSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Developer settings include provider configuration, raw prompts, run logs, diagnostics, and internal tools.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Button("Hide Developer Settings") {
+                appState.developerSettingsUnlocked = false
+                appState.selectedSettingsTab = .general
+            }
+            .disabled(AppBuild.isDevBundle)
+
+            if AppBuild.isDevBundle {
+                Text("Developer settings are always visible in dev builds.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
     // MARK: Microphone
 
     private var microphoneSection: some View {
@@ -1213,7 +1385,7 @@ struct GeneralSettingsView: View {
 
     private var vocabularySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Words and phrases to preserve during post-processing.")
+            Text("Names, product terms, and phrases \(AppName.displayName) should spell correctly.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -1325,6 +1497,50 @@ struct MicrophoneOptionRow: View {
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Developer Settings
+
+struct DeveloperSettingsView: View {
+    @EnvironmentObject var appState: AppState
+
+    private enum DeveloperSection: String, CaseIterable, Identifiable {
+        case provider = "Provider"
+        case prompts = "Prompts"
+        case macros = "Macros"
+        case runLog = "Run Log"
+        case debug = "Debug"
+
+        var id: String { rawValue }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("Developer Section", selection: $appState.selectedDeveloperSettingsSection) {
+                ForEach(DeveloperSection.allCases) { section in
+                    Text(section.rawValue).tag(section.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding([.top, .horizontal], 24)
+
+            Group {
+                switch DeveloperSection(rawValue: appState.selectedDeveloperSettingsSection) ?? .provider {
+                case .provider:
+                    GeneralSettingsView(page: .developer)
+                case .prompts:
+                    PromptsSettingsView()
+                case .macros:
+                    VoiceMacrosSettingsView()
+                case .runLog:
+                    RunLogView()
+                case .debug:
+                    DebugSettingsView()
+                }
+            }
+        }
     }
 }
 

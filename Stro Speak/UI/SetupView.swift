@@ -1,63 +1,14 @@
 import SwiftUI
 import AVFoundation
-import Combine
 import Foundation
 import ServiceManagement
-
-private struct SetupProviderSettingsSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var apiBaseURLInput: String
-    @Binding var transcriptionAPIURLInput: String
-    @Binding var transcriptionAPIKeyInput: String
-
-    var body: some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Advanced Provider Settings")
-                    .font(.title2.weight(.semibold))
-                Text("Use these fields when pointing \(AppName.displayName) at another OpenAI-compatible provider or when you need custom model IDs.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-
-            Divider()
-
-            ScrollView {
-                ProviderSettingsFields(
-                    apiBaseURLInput: $apiBaseURLInput,
-                    transcriptionAPIURLInput: $transcriptionAPIURLInput,
-                    transcriptionAPIKeyInput: $transcriptionAPIKeyInput,
-                    showsModelDescription: true
-                )
-                .padding(20)
-            }
-
-            Divider()
-
-            HStack {
-                Spacer()
-                Button("Done") {
-                    dismiss()
-                }
-                .keyboardShortcut(.defaultAction)
-            }
-            .padding(16)
-        }
-        .frame(width: 560, height: 520)
-    }
-}
 
 struct SetupView: View {
     var onComplete: () -> Void
     @EnvironmentObject var appState: AppState
-    @Environment(\.openURL) private var openURL
-    private let strospeakRepoURL = URL(string: "https://github.com/aaali/Strospeak")!
     private enum SetupStep: Int, CaseIterable {
         case welcome = 0
-        case apiKey
+        case account
         case micPermission
         case accessibility
         case screenRecording
@@ -66,42 +17,19 @@ struct SetupView: View {
         case commandMode
         case vocabulary
         case launchAtLogin
-        case testTranscription
         case ready
     }
 
     @State private var currentStep = SetupStep.welcome
     @State private var micPermissionGranted = false
     @State private var accessibilityGranted = false
-    @State private var apiKeyInput: String = ""
-    @State private var apiBaseURLInput: String = ""
-    @State private var transcriptionAPIURLInput: String = ""
-    @State private var transcriptionAPIKeyInput: String = ""
-    @State private var isValidatingKey = false
-    @State private var keyValidationError: String?
-    @State private var showingProviderSettingsSheet = false
     @State private var accessibilityTimer: Timer?
     @State private var screenRecordingTimer: Timer?
     @State private var customVocabularyInput: String = ""
-    @StateObject private var githubCache = GitHubMetadataCache.shared
-
-    // Test transcription state
-    private enum TestPhase: Equatable {
-        case idle, recording, transcribing, done
-    }
-    @State private var testPhase: TestPhase = .idle
-    @State private var testAudioRecorder: AudioRecorder? = nil
-    @State private var testAudioLevel: Float = 0.0
-    @State private var testTranscript: String = ""
-    @State private var testError: String? = nil
-    @State private var testAudioLevelCancellable: AnyCancellable? = nil
-    @State private var testMicPulsing = false
-    @State private var pendingStopRequest = false
     @State private var holdShortcutValidationMessage: String?
     @State private var toggleShortcutValidationMessage: String?
     @State private var isCapturingHoldShortcut = false
     @State private var isCapturingToggleShortcut = false
-    @StateObject private var testHotkeyHarness = SetupTestHotkeyHarness()
 
     private let totalSteps: [SetupStep] = SetupStep.allCases
     private var isCapturingShortcut: Bool {
@@ -124,12 +52,10 @@ struct SetupView: View {
                     Group {
                         if currentStep != .welcome {
                             Button("Back") {
-                                keyValidationError = nil
                                 withAnimation {
                                     currentStep = previousStep(currentStep)
                                 }
                             }
-                            .disabled(isValidatingKey)
                         }
                     }
 
@@ -137,37 +63,11 @@ struct SetupView: View {
 
                     Group {
                         if currentStep != .ready {
-                            if currentStep == .apiKey {
-                                Button(isValidatingKey ? "Validating..." : "Continue") {
-                                    validateAndContinue()
-                                }
-                                .keyboardShortcut(.defaultAction)
-                                .disabled(apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isValidatingKey)
-                            } else if currentStep == .vocabulary {
+                            if currentStep == .vocabulary {
                                 Button("Continue") {
                                     saveCustomVocabularyAndContinue()
                                 }
                                 .keyboardShortcut(.defaultAction)
-                            } else if currentStep == .testTranscription {
-                                HStack(spacing: 10) {
-                                    Button("Skip") {
-                                        stopTestHotkeyMonitoring()
-                                        withAnimation {
-                                            currentStep = nextStep(currentStep)
-                                        }
-                                    }
-                                    .buttonStyle(.plain)
-                                    .foregroundStyle(.secondary)
-
-                                    Button("Continue") {
-                                        stopTestHotkeyMonitoring()
-                                        withAnimation {
-                                            currentStep = nextStep(currentStep)
-                                        }
-                                    }
-                                    .keyboardShortcut(.defaultAction)
-                                    .disabled(testPhase != .done || testTranscript.isEmpty || testError != nil)
-                                }
                             } else {
                                 Button("Continue") {
                                     withAnimation {
@@ -191,29 +91,14 @@ struct SetupView: View {
         }
         .frame(width: 520, height: 680)
         .onAppear {
-            apiKeyInput = appState.apiKey
-            apiBaseURLInput = appState.apiBaseURL
-            transcriptionAPIURLInput = appState.transcriptionAPIURL
-            transcriptionAPIKeyInput = appState.transcriptionAPIKey
             customVocabularyInput = appState.customVocabulary
             checkMicPermission()
             checkAccessibility()
-            Task {
-                await githubCache.fetchIfNeeded()
-            }
         }
         .onDisappear {
             accessibilityTimer?.invalidate()
             screenRecordingTimer?.invalidate()
             appState.resumeHotkeyMonitoringAfterShortcutCapture()
-        }
-        .sheet(isPresented: $showingProviderSettingsSheet) {
-            SetupProviderSettingsSheet(
-                apiBaseURLInput: $apiBaseURLInput,
-                transcriptionAPIURLInput: $transcriptionAPIURLInput,
-                transcriptionAPIKeyInput: $transcriptionAPIKeyInput
-            )
-                .environmentObject(appState)
         }
         .onChange(of: isCapturingShortcut) { isCapturing in
             if isCapturing {
@@ -229,8 +114,8 @@ struct SetupView: View {
         switch currentStep {
         case .welcome:
             welcomeStep
-        case .apiKey:
-            apiKeyStep
+        case .account:
+            accountStep
         case .micPermission:
             micPermissionStep
         case .accessibility:
@@ -247,8 +132,6 @@ struct SetupView: View {
             vocabularyStep
         case .launchAtLogin:
             launchAtLoginStep
-        case .testTranscription:
-            testTranscriptionStep
         case .ready:
             readyStep
         }
@@ -273,194 +156,55 @@ struct SetupView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            VStack(spacing: 10) {
-                HStack(spacing: 8) {
-                    AsyncImage(url: URL(string: "https://avatars.githubusercontent.com/u/992248")) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image.resizable().aspectRatio(contentMode: .fill)
-                        default:
-                            Color.gray.opacity(0.2)
-                        }
-                    }
-                    .frame(width: 26, height: 26)
-                    .clipShape(Circle())
-
-                    Button {
-                        openURL(strospeakRepoURL)
-                    } label: {
-                        Text("aaali/Strospeak")
-                            .font(.system(.caption, design: .monospaced).weight(.medium))
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.blue)
-
-                    Spacer()
-
-                    HStack(spacing: 4) {
-                        Image(systemName: "star.fill")
-                            .foregroundStyle(.yellow)
-                            .font(.caption2)
-                        if githubCache.isLoading {
-                            ProgressView().scaleEffect(0.5)
-                        } else if let count = githubCache.starCount {
-                            Text("\(count.formatted()) \(count == 1 ? "star" : "stars")")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.yellow.opacity(0.14)))
-
-                    Button {
-                        openURL(strospeakRepoURL)
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "star")
-                            Text("Star")
-                        }
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Capsule().fill(Color.yellow.opacity(0.18)))
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                if !githubCache.recentContributors.isEmpty {
-                    Divider()
-                    HStack(spacing: 8) {
-                        HStack(spacing: -6) {
-                            ForEach(githubCache.recentContributors) { contributor in
-                                Button {
-                                    openURL(contributor.htmlUrl)
-                                } label: {
-                                    AsyncImage(url: contributor.avatarThumbnailUrl) { phase in
-                                        switch phase {
-                                        case .success(let image):
-                                            image.resizable().aspectRatio(contentMode: .fill)
-                                        default:
-                                            Color.gray.opacity(0.2)
-                                        }
-                                    }
-                                    .frame(width: 22, height: 22)
-                                    .clipShape(Circle())
-                                    .overlay(Circle().stroke(Color(nsColor: .windowBackgroundColor), lineWidth: 1.5))
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(Text(contributor.login))
-                                .accessibilityHint(Text("Open contributor profile"))
-                            }
-                        }
-                        .clipped()
-                        Text("recent contributors")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                            .fixedSize()
-                        Spacer()
-                    }
-                    .clipped()
-                }
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Works anywhere you type", systemImage: "keyboard")
+                Label("Adapts text to the app you're using", systemImage: "sparkles")
+                Label("Keeps your shortcuts and vocabulary under your control", systemImage: "slider.horizontal.3")
             }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
-            )
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .padding(.top, 4)
 
         }
     }
 
-    var apiKeyStep: some View {
+    var accountStep: some View {
         VStack {
             Spacer(minLength: 0)
 
             VStack(spacing: 20) {
-                Image(systemName: "key.fill")
+                Image(systemName: "person.crop.circle.fill")
                     .font(.system(size: 60))
                     .foregroundStyle(.blue)
 
-                Text("API Key")
+                Text("Account")
                     .font(.title)
                     .fontWeight(.bold)
 
-                Text("Enter an API key for your OpenAI-compatible provider. If you are not using Groq, expand the advanced provider settings and enter that provider's base URL and model IDs before continuing.")
+                Text("Your subscription and usage will be managed through your \(AppName.displayName) account.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                VStack(alignment: .leading, spacing: 10) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Using Groq?")
-                            .font(.subheadline.weight(.semibold))
-                        VStack(alignment: .leading, spacing: 2) {
-                            instructionRow(number: "1", text: "Go to [console.groq.com/keys](https://console.groq.com/keys)")
-                            instructionRow(number: "2", text: "Create a free account (if you don't have one)")
-                            instructionRow(number: "3", text: "Click **Create API Key** and copy it")
-                        }
-                    }
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.blue.opacity(0.06))
-                    )
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("API Key")
-                            .font(.headline)
-                        SecureField("Paste your API key", text: $apiKeyInput)
-                            .textFieldStyle(.roundedBorder)
-                            .font(.system(.body, design: .monospaced))
-                            .disabled(isValidatingKey)
-                            .onChange(of: apiKeyInput) { _ in
-                                keyValidationError = nil
-                            }
-
-                        if let error = keyValidationError {
-                            Label(error, systemImage: "xmark.circle.fill")
-                                .foregroundStyle(.red)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 10) {
+                        Image(systemName: appState.isSignedIn ? "checkmark.circle.fill" : "person.crop.circle.badge.exclamationmark")
+                            .foregroundStyle(appState.isSignedIn ? .green : .secondary)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(appState.isSignedIn ? "Signed in" : "Sign-in unavailable in this build")
+                                .font(.headline)
+                            Text(appState.isSignedIn && !appState.accountEmail.isEmpty
+                                 ? appState.accountEmail
+                                 : "Continue setup now. Connect the hosted account flow before public launch.")
                                 .font(.caption)
-                        }
-                    }
-
-                    Button {
-                        showingProviderSettingsSheet = true
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "slider.horizontal.3")
-                                .foregroundStyle(.secondary)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Advanced Provider Settings")
-                                    .foregroundStyle(.primary)
-                                Text("Base URL and model IDs")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Image(systemName: "arrow.up.right.square")
-                                .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.55))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
-                        )
                     }
-                    .buttonStyle(.plain)
-                    .padding(.top, 8)
                 }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .cornerRadius(10)
             }
             .frame(maxWidth: 440)
 
@@ -568,7 +312,7 @@ struct SetupView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("It needs this permission to see which app you're working in and any in-progress work. Nothing is stored on \(AppName.displayName)'s servers (\(AppName.displayName) doesn't have servers).")
+            Text("It needs this permission to see which app you're working in and adapt wording, names, and formatting. Commercial builds should process usage through the hosted \(AppName.displayName) service.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
                 .font(.callout)
@@ -686,7 +430,7 @@ struct SetupView: View {
                 .font(.title)
                 .fontWeight(.bold)
 
-            Text("Add words and phrases that should be preserved in post-processing.")
+            Text("Add names, product terms, and phrases \(AppName.displayName) should spell correctly.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -818,145 +562,6 @@ struct SetupView: View {
         }
     }
 
-    var testTranscriptionStep: some View {
-        VStack(spacing: 20) {
-            // Microphone picker
-            VStack(spacing: 4) {
-                Picker("Microphone:", selection: $appState.selectedMicrophoneID) {
-                    Text("System Default").tag("default")
-                    ForEach(appState.availableMicrophones) { device in
-                        Text(device.name).tag(device.uid)
-                    }
-                }
-                .frame(maxWidth: 340)
-
-                Text("You can change this later in the menu bar or settings.")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-
-            Spacer()
-
-            Group {
-                switch testPhase {
-                case .idle:
-                    VStack(spacing: 20) {
-                        Image(systemName: "mic.fill")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.blue)
-                            .scaleEffect(testMicPulsing ? 1.15 : 1.0)
-                            .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: testMicPulsing)
-
-                        Text("Let's Try It Out!")
-                            .font(.title)
-                            .fontWeight(.bold)
-
-                        Text(testShortcutPrompt)
-                            .font(.headline)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(10)
-
-                        Text("Say anything — a sentence or two is perfect.")
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-
-                case .recording:
-                    VStack(spacing: 20) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.blue.opacity(0.65))
-                                .frame(width: 100, height: 100)
-
-                            Circle()
-                                .stroke(Color.blue.opacity(0.8), lineWidth: 3)
-                                .frame(width: 100, height: 100)
-                                .shadow(color: .blue.opacity(0.5), radius: 10)
-
-                            WaveformView(audioLevel: testAudioLevel)
-                        }
-
-                        Text("Listening...")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.blue)
-                    }
-
-                case .transcribing:
-                    VStack(spacing: 20) {
-                        InlineTranscribingDots()
-
-                        Text("Transcribing...")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
-                    }
-
-                case .done:
-                    VStack(spacing: 16) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.green)
-
-                        if let error = testError {
-                            Text("Something went wrong")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-
-                            Text(error)
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-
-                            Text(retryShortcutPrompt)
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                        } else if testTranscript.isEmpty {
-                            Text("No speech detected")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.secondary)
-
-                            Text(retryShortcutPrompt)
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text("Perfect — \(AppName.displayName) is ready to go.")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-
-                            Text(testTranscript)
-                                .font(.body)
-                                .padding(12)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color(nsColor: .controlBackgroundColor))
-                                .cornerRadius(10)
-                                .transition(.move(edge: .bottom).combined(with: .opacity))
-
-                            Text(retryShortcutPrompt)
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-            .transition(.opacity)
-            .id(testPhase)
-
-            Spacer()
-        }
-        .onAppear {
-            appState.refreshAvailableMicrophones()
-            testMicPulsing = true
-            startTestHotkeyMonitoring()
-        }
-        .onDisappear {
-            stopTestHotkeyMonitoring()
-        }
-    }
-
     var readyStep: some View {
         VStack(spacing: 20) {
             Image(systemName: "checkmark.circle.fill")
@@ -1017,28 +622,9 @@ struct SetupView: View {
             return accessibilityGranted
         case .screenRecording:
             return appState.hasScreenRecordingPermission
-        case .testTranscription:
-            return testPhase == .done && !testTranscript.isEmpty && testError == nil
         default:
             return true
         }
-    }
-
-    private var testShortcutPrompt: String {
-        switch (appState.hasEnabledHoldShortcut, appState.hasEnabledToggleShortcut) {
-        case (true, true):
-            return "Hold \(appState.holdShortcut.displayName) or tap \(appState.toggleShortcut.displayName)"
-        case (true, false):
-            return "Hold \(appState.holdShortcut.displayName)"
-        case (false, true):
-            return "Tap \(appState.toggleShortcut.displayName)"
-        case (false, false):
-            return "Use Start Dictating from the menu bar"
-        }
-    }
-
-    private var retryShortcutPrompt: String {
-        "\(testShortcutPrompt) to try again"
     }
 
     // MARK: - Helpers
@@ -1056,30 +642,6 @@ struct SetupView: View {
     }
 
     // MARK: - Actions
-
-    func validateAndContinue() {
-        let key = apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        let baseURL = apiBaseURLInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        let resolvedBaseURL = baseURL.isEmpty ? AppState.defaultAPIBaseURL : baseURL
-        appState.apiBaseURL = resolvedBaseURL
-        isValidatingKey = true
-        keyValidationError = nil
-
-        Task {
-            let valid = await TranscriptionService.validateAPIKey(key, baseURL: resolvedBaseURL)
-            await MainActor.run {
-                isValidatingKey = false
-                if valid {
-                    appState.apiKey = key
-                    withAnimation {
-                        currentStep = nextStep(currentStep)
-                    }
-                } else {
-                    keyValidationError = "Validation failed. Please check your API key and provider settings, then try again."
-                }
-            }
-        }
-    }
 
     func saveCustomVocabularyAndContinue() {
         appState.customVocabulary = customVocabularyInput.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1139,324 +701,6 @@ struct SetupView: View {
         }
     }
 
-    // MARK: - Test Transcription
-
-    private func startTestHotkeyMonitoring() {
-        testHotkeyHarness.onAction = { action in
-            switch action {
-            case .start:
-                guard testPhase == .idle || testPhase == .done else { return }
-                if testPhase == .done {
-                    resetTest()
-                }
-                pendingStopRequest = false
-                do {
-                    let recorder = AudioRecorder()
-                    recorder.onRecordingFailure = { [weak recorder] error in
-                        guard let recorder else { return }
-                        Task { @MainActor in
-                            testAudioLevelCancellable?.cancel()
-                            testAudioLevelCancellable = nil
-                            testAudioLevel = 0.0
-                            testHotkeyHarness.isTranscribing = false
-                            testAudioRecorder = nil
-                            pendingStopRequest = false
-                            testError = error.localizedDescription
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                testPhase = .done
-                            }
-                            recorder.cleanup()
-                        }
-                    }
-                    try recorder.startRecording(deviceUID: appState.selectedMicrophoneID)
-                    testAudioRecorder = recorder
-                    testError = nil
-                    testAudioLevelCancellable = recorder.$audioLevel
-                        .receive(on: DispatchQueue.main)
-                        .sink { level in
-                            testAudioLevel = level
-                        }
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        testPhase = .recording
-                    }
-                    // Drain a stop that arrived while the recorder was still starting up
-                    // (e.g. very brief hold-to-talk tap on first-run mic-permission paths).
-                    if pendingStopRequest {
-                        pendingStopRequest = false
-                        finalizeTestStop()
-                    }
-                } catch {
-                    testHotkeyHarness.resetSession()
-                    pendingStopRequest = false
-                    testError = error.localizedDescription
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        testPhase = .done
-                    }
-                }
-
-            case .stop:
-                finalizeTestStop()
-
-            case .switchedToToggle:
-                break
-            }
-        }
-
-        do {
-            try testHotkeyHarness.start(configuration: ShortcutConfiguration(
-                hold: appState.holdShortcut,
-                toggle: appState.toggleShortcut
-            ), startDelay: appState.shortcutStartDelay)
-        } catch {
-            testError = error.localizedDescription
-            testPhase = .done
-        }
-    }
-
-    private func stopTestHotkeyMonitoring() {
-        testHotkeyHarness.stop()
-        testAudioLevelCancellable?.cancel()
-        testAudioLevelCancellable = nil
-        if let recorder = testAudioRecorder, recorder.isRecording {
-            recorder.cancelRecording()
-        }
-        testAudioRecorder = nil
-        pendingStopRequest = false
-    }
-
-    private func resetTest() {
-        testPhase = .idle
-        testTranscript = ""
-        testError = nil
-        testAudioLevel = 0.0
-        testMicPulsing = true
-        pendingStopRequest = false
-        testHotkeyHarness.isTranscribing = false
-        testHotkeyHarness.resetSession()
-        if let recorder = testAudioRecorder {
-            if recorder.isRecording {
-                recorder.cancelRecording()
-            }
-            testAudioRecorder = nil
-        }
-    }
-
-    /// Mirrors `AppState.handleShortcutEvent(.stop)` semantics: always honours a
-    /// stop signal, regardless of whether the start path has finished setting up.
-    /// If the recorder isn't ready yet (mid-startup, mic-permission flow, etc.),
-    /// the request is parked in `pendingStopRequest` and drained as soon as the
-    /// start path completes.
-    private func finalizeTestStop() {
-        guard let recorder = testAudioRecorder else {
-            // Stop arrived before/without a recorder.
-            // If start is still in flight, remember to stop the moment it lands.
-            if testPhase == .idle || testPhase == .done {
-                pendingStopRequest = false
-                testHotkeyHarness.resetSession()
-            } else {
-                pendingStopRequest = true
-            }
-            return
-        }
-
-        pendingStopRequest = false
-        testAudioLevelCancellable?.cancel()
-        testAudioLevelCancellable = nil
-        testAudioLevel = 0.0
-        testHotkeyHarness.isTranscribing = true
-
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-            testPhase = .transcribing
-        }
-        recorder.stopRecording { url in
-            guard let url else {
-                Task { @MainActor in
-                    testHotkeyHarness.isTranscribing = false
-                    testAudioRecorder = nil
-                    if testError == nil {
-                        testError = "No audio file was created."
-                    }
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        testPhase = .done
-                    }
-                    recorder.cleanup()
-                }
-                return
-            }
-
-            Task {
-                do {
-                    let service = try appState.makeTranscriptionService()
-                    let transcript = try await service.transcribe(fileURL: url)
-                    await MainActor.run {
-                        testHotkeyHarness.isTranscribing = false
-                        testAudioRecorder = nil
-                        testTranscript = transcript
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                            testPhase = .done
-                        }
-                    }
-                } catch {
-                    await MainActor.run {
-                        testHotkeyHarness.isTranscribing = false
-                        testAudioRecorder = nil
-                        testError = error.localizedDescription
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                            testPhase = .done
-                        }
-                    }
-                }
-                await MainActor.run {
-                    recorder.cleanup()
-                }
-            }
-        }
-    }
-
-}
-
-struct GitHubRepoInfo: Decodable {
-    let stargazersCount: Int
-
-    private enum CodingKeys: String, CodingKey {
-        case stargazersCount = "stargazers_count"
-    }
-}
-
-struct GitHubStarRecord: Decodable, Identifiable {
-    let user: GitHubStarUser
-
-    var id: Int {
-        user.id
-    }
-}
-
-struct GitHubStarUser: Decodable {
-    let id: Int
-    let login: String
-    let avatarUrl: URL
-    let htmlUrl: URL
-
-    /// Avatar URL resized to 44px (2x for 22pt display) for efficient loading
-    var avatarThumbnailUrl: URL {
-        // GitHub avatar URLs already have query params, so append with &
-        let separator = avatarUrl.absoluteString.contains("?") ? "&" : "?"
-        return URL(string: avatarUrl.absoluteString + "\(separator)s=44") ?? avatarUrl
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case login
-        case avatarUrl = "avatar_url"
-        case htmlUrl = "html_url"
-    }
-}
-
-struct GitHubContributor: Decodable, Identifiable {
-    let id: Int
-    let login: String
-    let avatarUrl: URL
-    let htmlUrl: URL
-
-    var avatarThumbnailUrl: URL {
-        let separator = avatarUrl.absoluteString.contains("?") ? "&" : "?"
-        return URL(string: avatarUrl.absoluteString + "\(separator)s=44") ?? avatarUrl
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case login
-        case avatarUrl = "avatar_url"
-        case htmlUrl = "html_url"
-    }
-}
-
-@MainActor
-class GitHubMetadataCache: ObservableObject {
-    static let shared = GitHubMetadataCache()
-
-    @Published var starCount: Int?
-    @Published var recentStargazers: [GitHubStarRecord] = []
-    @Published var recentContributors: [GitHubContributor] = []
-    @Published var isLoading = true
-
-    private var lastFetchDate: Date?
-    private let cacheDuration: TimeInterval = 5 * 60 // 5 minutes
-    private let repoAPIURL = URL(string: "https://api.github.com/repos/aaali/Strospeak")!
-
-    private init() {}
-
-    func fetchIfNeeded() async {
-        if let lastFetch = lastFetchDate, Date().timeIntervalSince(lastFetch) < cacheDuration {
-            return
-        }
-
-        isLoading = true
-
-        do {
-            let repoResult = try await URLSession.shared.data(from: repoAPIURL)
-            guard let repoHTTP = repoResult.1 as? HTTPURLResponse,
-                  (200..<300).contains(repoHTTP.statusCode) else {
-                throw URLError(.badServerResponse)
-            }
-            let count = try JSONDecoder().decode(GitHubRepoInfo.self, from: repoResult.0).stargazersCount
-
-            var recent: [GitHubStarRecord] = []
-            if count > 0 {
-                let perPage = 100
-                let lastPage = max(1, Int(ceil(Double(count) / Double(perPage))))
-                let stargazersURL = URL(string: "https://api.github.com/repos/aaali/Strospeak/stargazers?per_page=\(perPage)&page=\(lastPage)")!
-                var request = URLRequest(url: stargazersURL)
-                request.setValue("application/vnd.github.v3.star+json", forHTTPHeaderField: "Accept")
-                let starredResult = try await URLSession.shared.data(for: request)
-                if let starredHTTP = starredResult.1 as? HTTPURLResponse,
-                   (200..<300).contains(starredHTTP.statusCode) {
-                    let all = try JSONDecoder().decode([GitHubStarRecord].self, from: starredResult.0)
-                    recent = Array(all.suffix(15).reversed())
-                }
-            }
-
-            var contributors: [GitHubContributor] = []
-            let contributorsURL = URL(string: "https://api.github.com/repos/aaali/Strospeak/contributors?per_page=15")!
-            do {
-                let contributorsResult = try await URLSession.shared.data(from: contributorsURL)
-                if let contribHTTP = contributorsResult.1 as? HTTPURLResponse,
-                   (200..<300).contains(contribHTTP.statusCode) {
-                    contributors = try JSONDecoder().decode([GitHubContributor].self, from: contributorsResult.0)
-                }
-            } catch {
-                contributors = []
-            }
-
-            starCount = count
-            recentStargazers = recent
-            recentContributors = contributors
-            isLoading = false
-            lastFetchDate = Date()
-        } catch {
-            isLoading = false
-        }
-    }
-}
-
-private struct InlineTranscribingDots: View {
-    @State private var activeDot = 0
-    let timer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
-
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<3, id: \.self) { index in
-                Circle()
-                    .fill(Color.blue.opacity(activeDot == index ? 1.0 : 0.3))
-                    .frame(width: 12, height: 12)
-                    .scaleEffect(activeDot == index ? 1.3 : 1.0)
-                    .animation(.easeInOut(duration: 0.3), value: activeDot)
-            }
-        }
-        .onReceive(timer) { _ in
-            activeDot = (activeDot + 1) % 3
-        }
-    }
 }
 
 struct HowToRow: View {
