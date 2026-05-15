@@ -6,6 +6,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Analytics.captureAppOpened(source: "launch")
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleShowSetup),
@@ -36,6 +38,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        Analytics.captureAppOpened(source: "dock_reopen")
         guard appState.hasCompletedSetup else { return true }
         if !flag {
             showSettingsWindow()
@@ -161,6 +164,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func completeSetup() {
+        // PostHog: Track first-run setup completion
+        Analytics.capture("setup_completed")
         appState.hasCompletedSetup = true
         setupWindow?.close()
         setupWindow = nil

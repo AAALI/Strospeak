@@ -291,6 +291,10 @@ final class AppState: ObservableObject, @unchecked Sendable {
         didSet {
             persistAPIKey(apiKey)
             rebuildContextService()
+            // PostHog: Track when a new API key is saved
+            if !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Analytics.capture("api_key_saved")
+            }
         }
     }
 
@@ -1772,6 +1776,8 @@ final class AppState: ObservableObject, @unchecked Sendable {
         capturedContext = nil
         currentSessionIntent = .dictation
         isRecording = false
+        // PostHog: Track recording cancellation
+        Analytics.capture("recording_cancelled")
         errorMessage = nil
         debugStatusMessage = "Cancelled"
         statusText = "Cancelled"
@@ -2144,6 +2150,11 @@ final class AppState: ObservableObject, @unchecked Sendable {
         errorMessage = nil
 
         isRecording = true
+        // PostHog: Track recording start
+        Analytics.capture("recording_started", properties: [
+            "trigger_mode": triggerMode.rawValue,
+            "command_mode": currentSessionIntent.isCommandMode,
+        ])
         statusText = "Starting..."
         hasShownScreenshotPermissionAlert = false
 
@@ -2250,6 +2261,10 @@ final class AppState: ObservableObject, @unchecked Sendable {
         shortcutSessionController.reset()
         endCriticalDictationActivity()
         errorMessage = formattedRecordingStartError(error)
+        // PostHog: Track recording/transcription failure
+        Analytics.capture("transcription_failed", properties: [
+            "error": error.localizedDescription,
+        ])
         statusText = "Error"
         overlayManager.dismiss()
         refreshAvailableMicrophonesIfNeeded()
@@ -2636,6 +2651,16 @@ final class AppState: ObservableObject, @unchecked Sendable {
                         self.lastTranscript = trimmedFinalTranscript
                         self.isTranscribing = false
                         self.endCriticalDictationActivity()
+                        // PostHog: Track successful transcription
+                        let isCommandMode = sessionIntent.isCommandMode
+                        Analytics.capture(
+                            isCommandMode ? "command_transform_used" : "transcription_completed",
+                            properties: [
+                                "transcript_length": trimmedFinalTranscript.count,
+                                "is_empty": trimmedFinalTranscript.isEmpty,
+                                "post_processing_status": processingStatus,
+                            ]
+                        )
                         self.debugStatusMessage = "Done"
                         let completionStatusText = self.preserveClipboard ? "Pasted at cursor!" : "Copied to clipboard!"
                         let enterOnlyStatusText = "Pressed Enter"
@@ -2707,6 +2732,10 @@ final class AppState: ObservableObject, @unchecked Sendable {
                         self.errorMessage = error.localizedDescription
                         self.isTranscribing = false
                         self.endCriticalDictationActivity()
+                        // PostHog: Track transcription pipeline failure
+                        Analytics.capture("transcription_failed", properties: [
+                            "error": error.localizedDescription,
+                        ])
                         self.statusText = "Error"
                         self.overlayManager.dismiss()
                         self.lastPostProcessedTranscript = ""

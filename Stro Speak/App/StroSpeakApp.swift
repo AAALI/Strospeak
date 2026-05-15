@@ -6,6 +6,10 @@ struct StroSpeakApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @AppStorage("show_menu_bar_icon") private var showMenuBarIcon = true
 
+    init() {
+        Analytics.configurePostHog()
+    }
+
     var body: some Scene {
         MenuBarExtra(isInserted: $showMenuBarIcon) {
             MenuBarView()

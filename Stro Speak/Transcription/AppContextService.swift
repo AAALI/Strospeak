@@ -231,6 +231,15 @@ For chat or messaging apps, prioritize the current conversation/person, latest v
         contextSystemPrompt: String,
         model: String
     ) async -> (activity: String, prompt: String)? {
+        let traceId = Analytics.newTraceId()
+        let spanId = Analytics.newTraceId()
+        let startedAt = Date()
+        Analytics.captureLLMTrace(
+            traceId: traceId,
+            name: "Infer app context",
+            feature: "context_inference"
+        )
+
         do {
             var request = URLRequest(url: URL(string: "\(baseURL)/chat/completions")!)
             request.httpMethod = "POST"
@@ -287,6 +296,22 @@ User profile note: \(userProfileNote.isEmpty ? "None" : userProfileNote)
             guard let httpResponse = response as? HTTPURLResponse else {
                 return nil
             }
+            Analytics.captureLLMGeneration(
+                traceId: traceId,
+                parentId: traceId,
+                spanId: spanId,
+                name: "Infer app context",
+                feature: "context_inference",
+                model: model,
+                provider: Self.providerName(for: baseURL),
+                endpoint: "chat/completions",
+                startedAt: startedAt,
+                statusCode: httpResponse.statusCode,
+                responseData: data,
+                error: nil,
+                inputCharacters: metadata.count,
+                outputCharacters: Self.chatCompletionOutputLength(from: data)
+            )
             guard httpResponse.statusCode == 200 else {
                 return nil
             }
@@ -302,8 +327,45 @@ User profile note: \(userProfileNote.isEmpty ? "None" : userProfileNote)
             guard !cleaned.isEmpty else { return nil }
             return (activity: normalizedActivitySummary(cleaned), prompt: fullPrompt)
         } catch {
+            Analytics.captureLLMGeneration(
+                traceId: traceId,
+                parentId: traceId,
+                spanId: spanId,
+                name: "Infer app context",
+                feature: "context_inference",
+                model: model,
+                provider: Self.providerName(for: baseURL),
+                endpoint: "chat/completions",
+                startedAt: startedAt,
+                statusCode: nil,
+                responseData: nil,
+                error: error
+            )
             return nil
         }
+    }
+
+    private static func providerName(for baseURL: String) -> String {
+        guard let host = URL(string: baseURL)?.host?.lowercased() else {
+            return "openai-compatible"
+        }
+        if host.contains("groq") { return "groq" }
+        if host.contains("openai") { return "openai" }
+        if host.contains("openrouter") { return "openrouter" }
+        return host
+    }
+
+    private static func chatCompletionOutputLength(from data: Data) -> Int? {
+        guard
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let choices = json["choices"] as? [[String: Any]],
+            let firstChoice = choices.first,
+            let message = firstChoice["message"] as? [String: Any],
+            let content = message["content"] as? String
+        else {
+            return nil
+        }
+        return content.count
     }
 
     private func normalizedActivitySummary(_ value: String) -> String {

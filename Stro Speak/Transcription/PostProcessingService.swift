@@ -368,6 +368,15 @@ Behavior:
         customSystemPrompt: String = "",
         outputLanguage: String = ""
     ) async throws -> PostProcessingResult {
+        let traceId = Analytics.newTraceId()
+        let spanId = Analytics.newTraceId()
+        let startedAt = Date()
+        Analytics.captureLLMTrace(
+            traceId: traceId,
+            name: "Post-process dictation",
+            feature: "post_processing"
+        )
+
         var request = URLRequest(url: URL(string: "\(baseURL)/chat/completions")!)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -438,10 +447,48 @@ Model: \(model)
 
         request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
 
-        let (data, response) = try await LLMAPITransport.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await LLMAPITransport.data(for: request)
+        } catch {
+            Analytics.captureLLMGeneration(
+                traceId: traceId,
+                parentId: traceId,
+                spanId: spanId,
+                name: "Clean transcript",
+                feature: "post_processing",
+                model: model,
+                provider: Self.providerName(for: baseURL),
+                endpoint: "chat/completions",
+                startedAt: startedAt,
+                statusCode: nil,
+                responseData: nil,
+                error: error,
+                inputCharacters: transcript.count
+            )
+            throw error
+        }
         guard let httpResponse = response as? HTTPURLResponse else {
             throw PostProcessingError.invalidResponse("No HTTP response")
         }
+
+        Analytics.captureLLMGeneration(
+            traceId: traceId,
+            parentId: traceId,
+            spanId: spanId,
+            name: "Clean transcript",
+            feature: "post_processing",
+            model: model,
+            provider: Self.providerName(for: baseURL),
+            endpoint: "chat/completions",
+            startedAt: startedAt,
+            statusCode: httpResponse.statusCode,
+            responseData: data,
+            error: nil,
+            inputCharacters: transcript.count,
+            outputCharacters: Self.chatCompletionOutputLength(from: data)
+        )
 
         guard httpResponse.statusCode == 200 else {
             let message = String(data: data, encoding: .utf8) ?? ""
@@ -475,6 +522,15 @@ Model: \(model)
         customVocabulary: [String],
         outputLanguage: String = ""
     ) async throws -> PostProcessingResult {
+        let traceId = Analytics.newTraceId()
+        let spanId = Analytics.newTraceId()
+        let startedAt = Date()
+        Analytics.captureLLMTrace(
+            traceId: traceId,
+            name: "Command transform",
+            feature: "command_transform"
+        )
+
         var request = URLRequest(url: URL(string: "\(baseURL)/chat/completions")!)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -548,10 +604,48 @@ Model: \(model)
 
         request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
 
-        let (data, response) = try await LLMAPITransport.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await LLMAPITransport.data(for: request)
+        } catch {
+            Analytics.captureLLMGeneration(
+                traceId: traceId,
+                parentId: traceId,
+                spanId: spanId,
+                name: "Transform selected text",
+                feature: "command_transform",
+                model: model,
+                provider: Self.providerName(for: baseURL),
+                endpoint: "chat/completions",
+                startedAt: startedAt,
+                statusCode: nil,
+                responseData: nil,
+                error: error,
+                inputCharacters: selectedText.count + voiceCommand.count
+            )
+            throw error
+        }
         guard let httpResponse = response as? HTTPURLResponse else {
             throw PostProcessingError.invalidResponse("No HTTP response")
         }
+
+        Analytics.captureLLMGeneration(
+            traceId: traceId,
+            parentId: traceId,
+            spanId: spanId,
+            name: "Transform selected text",
+            feature: "command_transform",
+            model: model,
+            provider: Self.providerName(for: baseURL),
+            endpoint: "chat/completions",
+            startedAt: startedAt,
+            statusCode: httpResponse.statusCode,
+            responseData: data,
+            error: nil,
+            inputCharacters: selectedText.count + voiceCommand.count,
+            outputCharacters: Self.chatCompletionOutputLength(from: data)
+        )
 
         guard httpResponse.statusCode == 200 else {
             let message = String(data: data, encoding: .utf8) ?? ""
@@ -640,5 +734,28 @@ Context brief:
     private static func nonEmpty(_ value: String?) -> String? {
         let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private static func providerName(for baseURL: String) -> String {
+        guard let host = URL(string: baseURL)?.host?.lowercased() else {
+            return "openai-compatible"
+        }
+        if host.contains("groq") { return "groq" }
+        if host.contains("openai") { return "openai" }
+        if host.contains("openrouter") { return "openrouter" }
+        return host
+    }
+
+    private static func chatCompletionOutputLength(from data: Data) -> Int? {
+        guard
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let choices = json["choices"] as? [[String: Any]],
+            let firstChoice = choices.first,
+            let message = firstChoice["message"] as? [String: Any],
+            let content = message["content"] as? String
+        else {
+            return nil
+        }
+        return content.count
     }
 }

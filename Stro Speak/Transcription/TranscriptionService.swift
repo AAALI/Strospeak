@@ -63,6 +63,15 @@ class TranscriptionService {
     }
 
     private func transcribeAudioWithURLSession(fileURL: URL) async throws -> String {
+        let traceId = Analytics.newTraceId()
+        let spanId = Analytics.newTraceId()
+        let startedAt = Date()
+        Analytics.captureLLMTrace(
+            traceId: traceId,
+            name: "Speech transcription",
+            feature: "transcription"
+        )
+
         let url = baseURL
             .appendingPathComponent("audio")
             .appendingPathComponent("transcriptions")
@@ -83,10 +92,25 @@ class TranscriptionService {
             boundary: boundary
         )
 
+        let data: Data
+        let response: URLResponse
         do {
-            let (data, response) = try await LLMAPITransport.upload(for: request, from: body)
-            return try validateTranscriptionResponse(data: data, response: response, fileURL: fileURL)
+            (data, response) = try await LLMAPITransport.upload(for: request, from: body)
         } catch {
+            Analytics.captureLLMGeneration(
+                traceId: traceId,
+                parentId: traceId,
+                spanId: spanId,
+                name: "Transcribe audio",
+                feature: "transcription",
+                model: transcriptionModel,
+                provider: Self.providerName(for: baseURL),
+                endpoint: "audio/transcriptions",
+                startedAt: startedAt,
+                statusCode: nil,
+                responseData: nil,
+                error: error
+            )
             let nsError = error as NSError
             os_log(
                 .error,
@@ -100,6 +124,23 @@ class TranscriptionService {
             )
             throw error
         }
+
+        Analytics.captureLLMGeneration(
+            traceId: traceId,
+            parentId: traceId,
+            spanId: spanId,
+            name: "Transcribe audio",
+            feature: "transcription",
+            model: transcriptionModel,
+            provider: Self.providerName(for: baseURL),
+            endpoint: "audio/transcriptions",
+            startedAt: startedAt,
+            statusCode: (response as? HTTPURLResponse)?.statusCode,
+            responseData: data,
+            error: nil,
+            outputCharacters: Self.transcriptLength(from: data)
+        )
+        return try validateTranscriptionResponse(data: data, response: response, fileURL: fileURL)
     }
 
     private func validateTranscriptionResponse(data: Data, response: URLResponse, fileURL: URL) throws -> String {
@@ -237,6 +278,24 @@ class TranscriptionService {
         }
 
         return normalizedURL
+    }
+
+    private static func providerName(for baseURL: URL) -> String {
+        let host = baseURL.host?.lowercased() ?? ""
+        if host.contains("groq") { return "groq" }
+        if host.contains("openai") { return "openai" }
+        if host.contains("openrouter") { return "openrouter" }
+        return host.isEmpty ? "openai-compatible" : host
+    }
+
+    private static func transcriptLength(from data: Data) -> Int? {
+        guard
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let text = json["text"] as? String
+        else {
+            return nil
+        }
+        return text.count
     }
 
     // Whisper-large-v3 hallucinates common short phrases on silence/background

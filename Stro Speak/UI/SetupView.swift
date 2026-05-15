@@ -644,7 +644,15 @@ struct SetupView: View {
     // MARK: - Actions
 
     func saveCustomVocabularyAndContinue() {
-        appState.customVocabulary = customVocabularyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        let vocabulary = customVocabularyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        appState.customVocabulary = vocabulary
+        // PostHog: Track vocabulary saved during setup
+        if !vocabulary.isEmpty {
+            let termCount = vocabulary.split(whereSeparator: { $0 == "\n" || $0 == "," || $0 == ";" }).count
+            Analytics.capture("vocabulary_saved", properties: [
+                "term_count": termCount,
+            ])
+        }
         withAnimation {
             currentStep = nextStep(currentStep)
         }

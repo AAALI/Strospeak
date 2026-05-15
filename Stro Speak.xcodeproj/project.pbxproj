@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2E66A20005D0495D8B076C77DB358B7C /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = C7CFEFF015104DFE9875E9DE8836F5FF /* PostHog */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		9B5809982FB24C0400DF1553 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,7 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		9B3C70012FB7A00100DF1553 /* SharedEnvironment.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/SharedEnvironment.xcconfig; sourceTree = "<group>"; };
+		9B3C70012FB7A00100DF1553 /* Config/SharedEnvironment.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/SharedEnvironment.xcconfig; sourceTree = "<group>"; };
 		9B5809882FB24C0300DF1553 /* Stro Speak.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Stro Speak.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9B5809972FB24C0400DF1553 /* Stro SpeakTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Stro SpeakTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9B5809A12FB24C0400DF1553 /* Stro SpeakUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Stro SpeakUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -66,6 +70,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2E66A20005D0495D8B076C77DB358B7C /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -89,7 +94,7 @@
 		9B58097F2FB24C0300DF1553 = {
 			isa = PBXGroup;
 			children = (
-				9B3C70012FB7A00100DF1553 /* SharedEnvironment.xcconfig */,
+				9B3C70012FB7A00100DF1553 /* Config/SharedEnvironment.xcconfig */,
 				9B58098A2FB24C0300DF1553 /* Stro Speak */,
 				9B58099A2FB24C0400DF1553 /* Stro SpeakTests */,
 				9B5809A42FB24C0400DF1553 /* Stro SpeakUITests */,
@@ -127,6 +132,7 @@
 			);
 			name = "Stro Speak";
 			packageProductDependencies = (
+				C7CFEFF015104DFE9875E9DE8836F5FF /* PostHog */,
 			);
 			productName = "Stro Speak";
 			productReference = 9B5809882FB24C0300DF1553 /* Stro Speak.app */;
@@ -210,6 +216,9 @@
 			);
 			mainGroup = 9B58097F2FB24C0300DF1553;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F81235FF2D4B46E09D56BF9AB4502EC2 /* XCRemoteSwiftPackageReference "posthog-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9B5809892FB24C0300DF1553 /* Products */;
 			projectDirPath = "";
@@ -406,7 +415,7 @@
 		};
 		9B5809AC2FB24C0400DF1553 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9B3C70012FB7A00100DF1553 /* SharedEnvironment.xcconfig */;
+			baseConfigurationReference = 9B3C70012FB7A00100DF1553 /* Config/SharedEnvironment.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -418,6 +427,7 @@
 				DEVELOPMENT_TEAM = 3UWZ5ZA4P5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -441,7 +451,7 @@
 		};
 		9B5809AD2FB24C0400DF1553 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9B3C70012FB7A00100DF1553 /* SharedEnvironment.xcconfig */;
+			baseConfigurationReference = 9B3C70012FB7A00100DF1553 /* Config/SharedEnvironment.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -453,6 +463,7 @@
 				DEVELOPMENT_TEAM = 3UWZ5ZA4P5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -594,6 +605,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F81235FF2D4B46E09D56BF9AB4502EC2 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.58.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C7CFEFF015104DFE9875E9DE8836F5FF /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F81235FF2D4B46E09D56BF9AB4502EC2 /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9B5809802FB24C0300DF1553 /* Project object */;
 }
