@@ -41,17 +41,36 @@ struct GlobalAIServiceConfiguration {
 
     private static func configuredValue(environmentKey: String, infoDictionaryKey: String) -> String {
         if let environmentValue = ProcessInfo.processInfo.environment[environmentKey],
-           !environmentValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return environmentValue.trimmingCharacters(in: .whitespacesAndNewlines)
+           let value = usableConfiguredValue(environmentValue) {
+            return value
         }
 
         if let bundleValue = Bundle.main.object(forInfoDictionaryKey: infoDictionaryKey) as? String {
-            let trimmed = bundleValue.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty && !trimmed.hasPrefix("$(") {
-                return trimmed
+            if let value = usableConfiguredValue(bundleValue) {
+                return value
             }
         }
 
         return ""
+    }
+
+    private static func usableConfiguredValue(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        let placeholderValues: Set<String> = [
+            "YOUR_GROQ_API_KEY_HERE",
+            "your_api_key_here",
+            "$(STRO_SPEAK_AI_API_KEY)",
+            "$(STRO_SPEAK_TRANSCRIPTION_API_KEY)"
+        ]
+
+        guard !trimmed.hasPrefix("$("), !placeholderValues.contains(trimmed) else {
+            return nil
+        }
+
+        return trimmed
     }
 }

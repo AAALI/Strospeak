@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Stro Speak</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAccessibilityUsageDescription</key>
+	<string>Stro Speak needs accessibility access to detect the text cursor position and paste transcribed text.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string></string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Stro Speak needs microphone access to transcribe your speech.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Stro Speak needs speech recognition to convert your voice to text.</string>
+	<key>StroSpeakAIAPIKey</key>
+	<string>$(STRO_SPEAK_AI_API_KEY)</string>
+	<key>StroSpeakAIBaseURL</key>
+	<string>$(STRO_SPEAK_AI_BASE_URL)</string>
+	<key>StroSpeakTranscriptionAPIKey</key>
+	<string>$(STRO_SPEAK_TRANSCRIPTION_API_KEY)</string>
+	<key>StroSpeakTranscriptionBaseURL</key>
+	<string>$(STRO_SPEAK_TRANSCRIPTION_BASE_URL)</string>
+</dict>
+</plist>

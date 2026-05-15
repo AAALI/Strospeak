@@ -27,6 +27,15 @@ final class Stro_SpeakTests: XCTestCase {
         XCTAssertEqual(configuration.baseURL, "https://api.example.com/openai/v1")
     }
 
+    func testGlobalAIServiceConfigurationTreatsPlaceholderAPIKeyAsMissing() {
+        setenv("STRO_SPEAK_AI_API_KEY", "YOUR_GROQ_API_KEY_HERE", 1)
+
+        let configuration = GlobalAIServiceConfiguration.current
+
+        XCTAssertEqual(configuration.apiKey, "")
+        XCTAssertFalse(configuration.hasAPIKey)
+    }
+
     func testGlobalAIServiceConfigurationSupportsTranscriptionSpecificOverrides() {
         setenv("STRO_SPEAK_AI_API_KEY", "service-key", 1)
         setenv("STRO_SPEAK_AI_BASE_URL", "https://api.example.com/openai/v1", 1)

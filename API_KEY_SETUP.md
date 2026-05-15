@@ -16,45 +16,27 @@ Or create a `.env` file (copy from `.env.example`) and use a tool like `dotenv` 
 
 ## App Store Distribution Setup
 
-For App Store distribution, you need to hardcode the API keys in the Xcode project build settings since App Store Connect doesn't provide environment variable injection.
+For App Store distribution, set the API configuration as Xcode Cloud shared environment variables. Xcode Cloud exposes these values during the build, `ci_scripts/ci_pre_xcodebuild.sh` writes them into `Config/GeneratedCloudSecrets.xcconfig`, and the app target expands them into the generated `Info.plist` so the distributed app can use the same global key for every user.
 
-### Steps:
+### Xcode Cloud Shared Environment Variables
 
-1. **Open Xcode Project**
-   - Open `Stro Speak.xcodeproj` in Xcode
-   - Select the project in the navigator
-   - Select the "Stro Speak" target
+1. Go to App Store Connect > Xcode Cloud > Settings > Shared Environment Variables.
+2. Add these shared variables:
+   ```
+   STRO_SPEAK_AI_API_KEY = your_production_api_key
+   STRO_SPEAK_AI_BASE_URL = https://api.groq.com/openai/v1
+   STRO_SPEAK_TRANSCRIPTION_API_KEY = (optional, leave empty if not needed)
+   STRO_SPEAK_TRANSCRIPTION_BASE_URL = (optional, leave empty if not needed)
+   ```
+3. Make sure the workflow uses the shared variables, as shown by the `Used In` workflow column in App Store Connect.
 
-2. **Add Build Settings**
-   - Go to the "Build Settings" tab
-   - Click the "+" button to add user-defined settings
-   - Add the following build settings:
-     ```
-     STRO_SPEAK_AI_API_KEY = your_production_api_key
-     STRO_SPEAK_AI_BASE_URL = https://api.groq.com/openai/v1
-     STRO_SPEAK_TRANSCRIPTION_API_KEY = (optional, leave empty if not needed)
-     STRO_SPEAK_TRANSCRIPTION_BASE_URL = (optional, leave empty if not needed)
-     ```
-
-**Note:** The project currently has placeholder values (`YOUR_GROQ_API_KEY_HERE`) that need to be replaced with your actual API keys.
-
-3. **Configure Different Environments (Optional)**
-   - Create separate schemes/configurations for TestFlight and Production
-   - Set different API keys for each configuration
-   - Use the appropriate scheme when building for each environment
-
-### Alternative: Xcode Cloud
-
-If using Xcode Cloud for CI/CD:
-1. Go to Xcode Cloud workflow settings
-2. Add environment variables in the workflow configuration
-3. These will be available during the Xcode Cloud build process
+Do not add the API key as a hardcoded target build setting in the Xcode project. The target reads `Config/SharedEnvironment.xcconfig`, which optionally includes the generated Xcode Cloud secrets file. `Config/GeneratedCloudSecrets.xcconfig` is ignored by git and should never be committed.
 
 ### TestFlight vs Production
 
-- **TestFlight**: Use your test API keys (lower rate limits)
-- **Production**: Use your production API keys with appropriate rate limits
-- Use different Xcode schemes or build configurations to separate these
+- **TestFlight**: Use your test API keys if you have a separate Xcode Cloud workflow.
+- **Production**: Use your production API keys with appropriate rate limits.
+- Use different Xcode Cloud workflows or shared variable sets if you need separate environments.
 
 ### Security Notes
 
@@ -66,19 +48,20 @@ If using Xcode Cloud for CI/CD:
 
 ## Current Configuration
 
-The project uses the following build settings in `project.pbxproj`:
+The app target uses `Config/SharedEnvironment.xcconfig` as its base configuration and expands the following keys in `Stro Speak/Info.plist`:
 
 ```
-INFOPLIST_KEY_StroSpeakAIAPIKey = "$(STRO_SPEAK_AI_API_KEY)";
-INFOPLIST_KEY_StroSpeakAIBaseURL = "$(STRO_SPEAK_AI_BASE_URL)";
-INFOPLIST_KEY_StroSpeakTranscriptionAPIKey = "$(STRO_SPEAK_TRANSCRIPTION_API_KEY)";
-INFOPLIST_KEY_StroSpeakTranscriptionBaseURL = "$(STRO_SPEAK_TRANSCRIPTION_BASE_URL)";
+StroSpeakAIAPIKey = "$(STRO_SPEAK_AI_API_KEY)"
+StroSpeakAIBaseURL = "$(STRO_SPEAK_AI_BASE_URL)"
+StroSpeakTranscriptionAPIKey = "$(STRO_SPEAK_TRANSCRIPTION_API_KEY)"
+StroSpeakTranscriptionBaseURL = "$(STRO_SPEAK_TRANSCRIPTION_BASE_URL)"
 ```
 
 These are read by `GlobalAIServiceConfiguration.swift` which:
-1. First checks environment variables
-2. Falls back to Info.plist values
-3. Returns empty string if neither is set
+1. First checks process environment variables for local runs and tests
+2. Falls back to generated `Info.plist` values embedded by Xcode Cloud builds
+3. Ignores empty, unresolved, or placeholder values
+4. Returns empty string if no real value is set
 
 ## Verification
 
@@ -86,5 +69,5 @@ To verify the setup works:
 
 1. Build locally with environment variables set
 2. Check that the app can successfully make API calls
-3. Test with TestFlight to ensure App Store Connect variables work
+3. Test with TestFlight to ensure Xcode Cloud shared variables were embedded
 4. Monitor API dashboard for successful requests

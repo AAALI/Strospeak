@@ -24,14 +24,28 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9B3C70012FB7A00100DF1553 /* SharedEnvironment.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/SharedEnvironment.xcconfig; sourceTree = "<group>"; };
 		9B5809882FB24C0300DF1553 /* Stro Speak.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Stro Speak.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9B5809972FB24C0400DF1553 /* Stro SpeakTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Stro SpeakTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9B5809A12FB24C0400DF1553 /* Stro SpeakUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Stro SpeakUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9B3C70022FB7A00100DF1553 /* Exceptions for "Stro Speak" folder in "Stro Speak" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9B5809872FB24C0300DF1553 /* Stro Speak */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9B58098A2FB24C0300DF1553 /* Stro Speak */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				9B3C70022FB7A00100DF1553 /* Exceptions for "Stro Speak" folder in "Stro Speak" target */,
+			);
 			path = "Stro Speak";
 			sourceTree = "<group>";
 		};
@@ -75,6 +89,7 @@
 		9B58097F2FB24C0300DF1553 = {
 			isa = PBXGroup;
 			children = (
+				9B3C70012FB7A00100DF1553 /* SharedEnvironment.xcconfig */,
 				9B58098A2FB24C0300DF1553 /* Stro Speak */,
 				9B58099A2FB24C0400DF1553 /* Stro SpeakTests */,
 				9B5809A42FB24C0400DF1553 /* Stro SpeakUITests */,
@@ -391,6 +406,7 @@
 		};
 		9B5809AC2FB24C0400DF1553 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9B3C70012FB7A00100DF1553 /* SharedEnvironment.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -404,18 +420,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Stro Speak";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSAccessibilityUsageDescription = "Stro Speak needs accessibility access to detect the text cursor position and paste transcribed text.";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Stro Speak needs microphone access to transcribe your speech.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Stro Speak needs speech recognition to convert your voice to text.";
-				INFOPLIST_KEY_StroSpeakAIAPIKey = "$(STRO_SPEAK_AI_API_KEY)";
-				INFOPLIST_KEY_StroSpeakAIBaseURL = "$(STRO_SPEAK_AI_BASE_URL)";
-				INFOPLIST_KEY_StroSpeakTranscriptionAPIKey = "$(STRO_SPEAK_TRANSCRIPTION_API_KEY)";
-				INFOPLIST_KEY_StroSpeakTranscriptionBaseURL = "$(STRO_SPEAK_TRANSCRIPTION_BASE_URL)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Stro Speak/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -425,8 +431,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				STRO_SPEAK_AI_API_KEY = "YOUR_GROQ_API_KEY_HERE";
-				STRO_SPEAK_AI_BASE_URL = "https://api.groq.com/openai/v1";
 				SWIFT_APPROACHABLE_CONCURRENCY = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -437,6 +441,7 @@
 		};
 		9B5809AD2FB24C0400DF1553 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9B3C70012FB7A00100DF1553 /* SharedEnvironment.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -450,18 +455,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Stro Speak";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSAccessibilityUsageDescription = "Stro Speak needs accessibility access to detect the text cursor position and paste transcribed text.";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Stro Speak needs microphone access to transcribe your speech.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Stro Speak needs speech recognition to convert your voice to text.";
-				INFOPLIST_KEY_StroSpeakAIAPIKey = "$(STRO_SPEAK_AI_API_KEY)";
-				INFOPLIST_KEY_StroSpeakAIBaseURL = "$(STRO_SPEAK_AI_BASE_URL)";
-				INFOPLIST_KEY_StroSpeakTranscriptionAPIKey = "$(STRO_SPEAK_TRANSCRIPTION_API_KEY)";
-				INFOPLIST_KEY_StroSpeakTranscriptionBaseURL = "$(STRO_SPEAK_TRANSCRIPTION_BASE_URL)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Stro Speak/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -471,8 +466,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				STRO_SPEAK_AI_API_KEY = "YOUR_GROQ_API_KEY_HERE";
-				STRO_SPEAK_AI_BASE_URL = "https://api.groq.com/openai/v1";
 				SWIFT_APPROACHABLE_CONCURRENCY = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = minimal;
