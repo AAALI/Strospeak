@@ -37,6 +37,8 @@ Include:
 App:
 Surface:
 Writing destination:
+Current conversation/person:
+Latest visible message/request:
 Likely intent:
 Tone expectation:
 Formatting hint:
@@ -45,7 +47,7 @@ User profile:
 Uncertainty:
 
 Use concrete evidence only. Do not invent recipients, names, or document content.
-Keep it under 120 words.
+For chat or messaging apps, prioritize the current conversation/person, latest visible message/request, and visible names or terms. Keep it under 140 words.
 """
     static let defaultContextPromptDate = "2026-05-11"
     static let defaultScreenshotMaxDimension: CGFloat = 1024
