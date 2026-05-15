@@ -465,7 +465,7 @@ struct SettingsView: View {
                 appState.developerSettingsUnlocked.toggle()
                 appState.selectedSettingsTab = appState.shouldShowDeveloperSettings ? .developer : .general
             }
-            .keyboardShortcut("d", modifiers: [.command, .option])
+            .keyboardShortcut("d", modifiers: [.control])
             .opacity(0)
             .frame(width: 0, height: 0)
         )
