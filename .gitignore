@@ -22,3 +22,6 @@ xcuserdata/
 .build/
 .swiftpm/
 Package.resolved
+
+# AI
+.superpowers
