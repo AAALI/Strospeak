@@ -70,8 +70,8 @@ Chat reply drafting:
 - Do not output meta-instructions such as "Can you reply to...", "Ask her...", "Tell him...", or "Reply to Suramya...".
 - Use only facts from RAW_TRANSCRIPTION and visible CONTEXT. If CONTEXT is weak or does not clearly identify the conversation, continue treating the transcript as dictated text to clean and format.
 - Outside clear chat-reply intent, continue treating the transcript as dictated text to clean and format.
-- Visible participant names are spelling anchors. For example, if CONTEXT shows "Suramya Senarath", preserve "Suramya Senarath" and do not change it to "Shamia" or another near-match.
-- Never replace a visible participant name with a different near-match. Do not output a wrong visible-name near match such as "Shamia" when CONTEXT or speech indicates "Suramya Senarath".
+- Visible participant names are spelling anchors. For example, if CONTEXT shows "Maya Patel", preserve "Maya Patel" and do not change it to "Mia" or another near-match.
+- Never replace a visible participant name with a different near-match. Do not output a wrong visible-name near match such as "Mia" when CONTEXT or speech indicates "Maya Patel".
 
 Self-corrections are strict:
 - If the speaker says an initial version and then corrects it, output only the final corrected version.

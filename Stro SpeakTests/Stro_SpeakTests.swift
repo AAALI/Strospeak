@@ -16,10 +16,10 @@ final class Stro_SpeakTests: XCTestCase {
 
         XCTAssertTrue(block.contains("App: Slack"))
         XCTAssertTrue(block.contains("Bundle ID: com.tinyspeck.slackmacgap"))
-        XCTAssertTrue(block.contains("Window: Suramya Senarath"))
+        XCTAssertTrue(block.contains("Window: Maya Patel"))
         XCTAssertTrue(block.contains("Selected text: None"))
         XCTAssertTrue(block.contains("Screenshot: available (image/jpeg)"))
-        XCTAssertTrue(block.contains("Current conversation/person: Suramya Senarath"))
+        XCTAssertTrue(block.contains("Current conversation/person: Maya Patel"))
         XCTAssertTrue(block.contains("Latest visible message/request: Could you please check the permissions for my TraFix account?"))
     }
 
@@ -41,27 +41,27 @@ final class Stro_SpeakTests: XCTestCase {
     func testSystemPromptUsesVisibleNamesAsSpellingAnchors() {
         let prompt = PostProcessingService.defaultSystemPrompt
 
-        XCTAssertTrue(prompt.contains("Suramya Senarath"))
+        XCTAssertTrue(prompt.contains("Maya Patel"))
         XCTAssertTrue(prompt.contains("Never replace a visible participant name with a different near-match"))
-        XCTAssertTrue(prompt.contains("Do not output a wrong visible-name near match such as \"Shamia\""))
+        XCTAssertTrue(prompt.contains("Do not output a wrong visible-name near match such as \"Mia\""))
     }
 
     private func slackTraFixContext() -> AppContext {
         AppContext(
             appName: "Slack",
             bundleIdentifier: "com.tinyspeck.slackmacgap",
-            windowTitle: "Suramya Senarath",
+            windowTitle: "Maya Patel",
             selectedText: nil,
             currentActivity: """
 App: Slack
 Surface: Direct message
-Writing destination: Message composer in a DM with Suramya Senarath
-Likely intent: Reply to Suramya's latest TraFix permissions question
+Writing destination: Message composer in a DM with Maya Patel
+Likely intent: Reply to Maya's latest TraFix permissions question
 Tone expectation: concise and helpful
 Formatting hint: one short chat message
-Current conversation/person: Suramya Senarath
+Current conversation/person: Maya Patel
 Latest visible message/request: Could you please check the permissions for my TraFix account? I cannot see anything on it.
-Visible names or terms: Suramya Senarath, Ali, TraFix, Akram
+Visible names or terms: Maya Patel, Jordan Lee, TraFix, Slack
 Uncertainty: Low
 """,
             contextSystemPrompt: nil,
