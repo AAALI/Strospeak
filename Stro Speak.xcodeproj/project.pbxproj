@@ -412,6 +412,10 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Stro Speak needs microphone access to transcribe your speech.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Stro Speak needs speech recognition to convert your voice to text.";
+				INFOPLIST_KEY_StroSpeakAIAPIKey = "$(STRO_SPEAK_AI_API_KEY)";
+				INFOPLIST_KEY_StroSpeakAIBaseURL = "$(STRO_SPEAK_AI_BASE_URL)";
+				INFOPLIST_KEY_StroSpeakTranscriptionAPIKey = "$(STRO_SPEAK_TRANSCRIPTION_API_KEY)";
+				INFOPLIST_KEY_StroSpeakTranscriptionBaseURL = "$(STRO_SPEAK_TRANSCRIPTION_BASE_URL)";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -452,6 +456,10 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Stro Speak needs microphone access to transcribe your speech.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Stro Speak needs speech recognition to convert your voice to text.";
+				INFOPLIST_KEY_StroSpeakAIAPIKey = "$(STRO_SPEAK_AI_API_KEY)";
+				INFOPLIST_KEY_StroSpeakAIBaseURL = "$(STRO_SPEAK_AI_BASE_URL)";
+				INFOPLIST_KEY_StroSpeakTranscriptionAPIKey = "$(STRO_SPEAK_TRANSCRIPTION_API_KEY)";
+				INFOPLIST_KEY_StroSpeakTranscriptionBaseURL = "$(STRO_SPEAK_TRANSCRIPTION_BASE_URL)";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

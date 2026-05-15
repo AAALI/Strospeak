@@ -455,6 +455,7 @@ final class AppState: ObservableObject, @unchecked Sendable {
     @Published var developerSettingsUnlocked: Bool {
         didSet {
             UserDefaults.standard.set(developerSettingsUnlocked, forKey: developerSettingsUnlockedStorageKey)
+            rebuildContextService()
         }
     }
 
@@ -738,9 +739,19 @@ final class AppState: ObservableObject, @unchecked Sendable {
 
         let selectedMicrophoneID = UserDefaults.standard.string(forKey: selectedMicrophoneStorageKey) ?? "default"
 
+        let initialServiceConfiguration = GlobalAIServiceConfiguration.current
+        let initialAllowsDeveloperProviderOverrides = AppBuild.isDevBundle
         self.contextService = Self.makeAppContextService(
-            apiKey: apiKey,
-            baseURL: apiBaseURL,
+            apiKey: Self.resolvedGeneralAPIKey(
+                storedAPIKey: apiKey,
+                serviceConfiguration: initialServiceConfiguration,
+                allowsDeveloperProviderOverrides: initialAllowsDeveloperProviderOverrides
+            ),
+            baseURL: Self.resolvedGeneralBaseURL(
+                storedBaseURL: apiBaseURL,
+                serviceConfiguration: initialServiceConfiguration,
+                allowsDeveloperProviderOverrides: initialAllowsDeveloperProviderOverrides
+            ),
             customContextPrompt: customContextPrompt,
             contextModel: contextModel,
             contextScreenshotMaxDimension: contextScreenshotMaxDimension,
@@ -956,8 +967,8 @@ final class AppState: ObservableObject, @unchecked Sendable {
 
     func makeAppContextService() -> AppContextService {
         Self.makeAppContextService(
-            apiKey: apiKey,
-            baseURL: apiBaseURL,
+            apiKey: resolvedGeneralAPIKey,
+            baseURL: resolvedGeneralBaseURL,
             customContextPrompt: customContextPrompt,
             contextModel: contextModel,
             contextScreenshotMaxDimension: contextScreenshotMaxDimension,
@@ -1001,14 +1012,73 @@ final class AppState: ObservableObject, @unchecked Sendable {
         return normalized
     }
 
+    private var allowsDeveloperProviderOverrides: Bool {
+        AppBuild.isDevBundle
+    }
+
+    private var serviceConfiguration: GlobalAIServiceConfiguration {
+        GlobalAIServiceConfiguration.current
+    }
+
+    private var resolvedGeneralAPIKey: String {
+        Self.resolvedGeneralAPIKey(
+            storedAPIKey: apiKey,
+            serviceConfiguration: serviceConfiguration,
+            allowsDeveloperProviderOverrides: allowsDeveloperProviderOverrides
+        )
+    }
+
+    private static func resolvedGeneralAPIKey(
+        storedAPIKey: String,
+        serviceConfiguration: GlobalAIServiceConfiguration,
+        allowsDeveloperProviderOverrides: Bool
+    ) -> String {
+        let stored = storedAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if allowsDeveloperProviderOverrides && !stored.isEmpty {
+            return stored
+        }
+        return serviceConfiguration.apiKey.isEmpty ? stored : serviceConfiguration.apiKey
+    }
+
+    private var resolvedGeneralBaseURL: String {
+        Self.resolvedGeneralBaseURL(
+            storedBaseURL: apiBaseURL,
+            serviceConfiguration: serviceConfiguration,
+            allowsDeveloperProviderOverrides: allowsDeveloperProviderOverrides
+        )
+    }
+
+    private static func resolvedGeneralBaseURL(
+        storedBaseURL: String,
+        serviceConfiguration: GlobalAIServiceConfiguration,
+        allowsDeveloperProviderOverrides: Bool
+    ) -> String {
+        let stored = storedBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if allowsDeveloperProviderOverrides && !stored.isEmpty {
+            return stored
+        }
+        if !serviceConfiguration.baseURL.isEmpty {
+            return serviceConfiguration.baseURL
+        }
+        return stored.isEmpty ? defaultAPIBaseURL : stored
+    }
+
     private var resolvedTranscriptionBaseURL: String {
         let trimmed = transcriptionAPIURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? apiBaseURL : trimmed
+        if allowsDeveloperProviderOverrides && !trimmed.isEmpty {
+            return trimmed
+        }
+        let serviceBaseURL = serviceConfiguration.resolvedTranscriptionBaseURL
+        return serviceBaseURL.isEmpty ? resolvedGeneralBaseURL : serviceBaseURL
     }
 
     private var resolvedTranscriptionAPIKey: String {
         let trimmed = transcriptionAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? apiKey : trimmed
+        if allowsDeveloperProviderOverrides && !trimmed.isEmpty {
+            return trimmed
+        }
+        let serviceAPIKey = serviceConfiguration.resolvedTranscriptionAPIKey
+        return serviceAPIKey.isEmpty ? resolvedGeneralAPIKey : serviceAPIKey
     }
 
     func makeTranscriptionService() throws -> TranscriptionService {
@@ -1171,8 +1241,8 @@ final class AppState: ObservableObject, @unchecked Sendable {
         )
 
         let postProcessingService = PostProcessingService(
-            apiKey: apiKey,
-            baseURL: apiBaseURL,
+            apiKey: resolvedGeneralAPIKey,
+            baseURL: resolvedGeneralBaseURL,
             preferredModel: postProcessingModel,
             preferredFallbackModel: postProcessingFallbackModel
         )
@@ -2469,8 +2539,8 @@ final class AppState: ObservableObject, @unchecked Sendable {
             self.debugStatusMessage = "Transcribing audio"
 
         let postProcessingService = PostProcessingService(
-            apiKey: apiKey,
-            baseURL: apiBaseURL,
+            apiKey: resolvedGeneralAPIKey,
+            baseURL: resolvedGeneralBaseURL,
             preferredModel: postProcessingModel,
             preferredFallbackModel: postProcessingFallbackModel
         )

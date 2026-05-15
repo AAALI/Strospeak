@@ -187,7 +187,7 @@ class TranscriptionService {
         let service = host ?? "the service"
         switch status {
         case 401:
-            return "Could not connect to \(AppName.displayName)'s speech service. Please sign in again or contact support."
+            return "Could not connect to \(AppName.displayName)'s speech service. Contact support."
         case 403:
             return "Your account does not have access to this speech service yet."
         case 404:
