@@ -36,6 +36,8 @@ For App Store distribution, you need to hardcode the API keys in the Xcode proje
      STRO_SPEAK_TRANSCRIPTION_BASE_URL = (optional, leave empty if not needed)
      ```
 
+**Note:** The project currently has placeholder values (`YOUR_GROQ_API_KEY_HERE`) that need to be replaced with your actual API keys.
+
 3. **Configure Different Environments (Optional)**
    - Create separate schemes/configurations for TestFlight and Production
    - Set different API keys for each configuration
