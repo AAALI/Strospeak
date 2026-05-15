@@ -22,7 +22,7 @@ xcuserdata/
 # Swift Package Manager
 .build/
 .swiftpm/
-Package.resolved
+
 
 # AI
 .superpowers
