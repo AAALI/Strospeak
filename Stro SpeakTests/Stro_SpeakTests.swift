@@ -9,6 +9,36 @@ import XCTest
 @testable import Stro_Speak
 
 final class Stro_SpeakTests: XCTestCase {
+    override func tearDown() {
+        unsetenv("STRO_SPEAK_AI_API_KEY")
+        unsetenv("STRO_SPEAK_AI_BASE_URL")
+        unsetenv("STRO_SPEAK_TRANSCRIPTION_API_KEY")
+        unsetenv("STRO_SPEAK_TRANSCRIPTION_BASE_URL")
+        super.tearDown()
+    }
+
+    func testGlobalAIServiceConfigurationReadsEnvironmentValues() {
+        setenv("STRO_SPEAK_AI_API_KEY", " service-key ", 1)
+        setenv("STRO_SPEAK_AI_BASE_URL", " https://api.example.com/openai/v1 ", 1)
+
+        let configuration = GlobalAIServiceConfiguration.current
+
+        XCTAssertEqual(configuration.apiKey, "service-key")
+        XCTAssertEqual(configuration.baseURL, "https://api.example.com/openai/v1")
+    }
+
+    func testGlobalAIServiceConfigurationSupportsTranscriptionSpecificOverrides() {
+        setenv("STRO_SPEAK_AI_API_KEY", "service-key", 1)
+        setenv("STRO_SPEAK_AI_BASE_URL", "https://api.example.com/openai/v1", 1)
+        setenv("STRO_SPEAK_TRANSCRIPTION_API_KEY", "speech-key", 1)
+        setenv("STRO_SPEAK_TRANSCRIPTION_BASE_URL", "https://speech.example.com/openai/v1", 1)
+
+        let configuration = GlobalAIServiceConfiguration.current
+
+        XCTAssertEqual(configuration.resolvedTranscriptionAPIKey, "speech-key")
+        XCTAssertEqual(configuration.resolvedTranscriptionBaseURL, "https://speech.example.com/openai/v1")
+    }
+
     func testStructuredContextBlockIncludesAppMetadataAndSummary() {
         let context = slackTraFixContext()
 
