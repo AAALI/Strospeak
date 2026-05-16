@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Stro Speak — Hold to talk. Release to type.</title>
+  <meta name="description" content="Stro Speak is a macOS menu-bar dictation app. Hold a key, talk, release — your cleaned-up words appear in whatever app you're in." />
+  <meta name="theme-color" content="#08090b" />
+
+  <meta property="og:title" content="Stro Speak — Hold to talk. Release to type." />
+  <meta property="og:description" content="A menu-bar dictation app for macOS. AI cleans your transcript and pastes it into the focused field." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Animated background -->
+  <div class="bg-wrap" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-orb bg-orb--1"></div>
+    <div class="bg-orb bg-orb--2"></div>
+    <div class="bg-orb bg-orb--3"></div>
+    <div class="bg-noise"></div>
+  </div>
+
+  <!-- Nav -->
+  <header class="nav" id="nav">
+    <a class="nav__brand" href="#top" aria-label="Stro Speak home">
+      <span class="nav__logo" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="22" height="22">
+          <defs>
+            <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#a78bfa"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+          <rect x="11" y="4" width="10" height="18" rx="5" fill="url(#lg)"/>
+          <path d="M6 14v2a10 10 0 0 0 20 0v-2" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <path d="M16 26v4" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="nav__name">Stro Speak</span>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#shortcuts">Shortcuts</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn--ghost nav__cta" href="#download">
+      <span>Download</span>
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 1.5a.75.75 0 0 1 .75.75v7.69l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3.75 3.75a.75.75 0 0 1-1.06 0L3.72 8.53a.75.75 0 1 1 1.06-1.06l2.47 2.47V2.25A.75.75 0 0 1 8 1.5Zm-5.25 11a.75.75 0 0 1 .75.75v.75c0 .14.11.25.25.25h8.5a.25.25 0 0 0 .25-.25v-.75a.75.75 0 0 1 1.5 0v.75A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25v-.75a.75.75 0 0 1 .75-.75Z"/></svg>
+    </a>
+  </header>
+
+  <main id="top">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero__inner">
+        <div class="hero__badge reveal">
+          <span class="dot"></span>
+          <span>For macOS · Apple Silicon &amp; Intel</span>
+        </div>
+
+        <h1 class="hero__title reveal">
+          Hold to talk.<br/>
+          <span class="gradient-text">Release to type.</span>
+        </h1>
+
+        <p class="hero__sub reveal">
+          Stro Speak lives in your menu bar. Press and hold a key, speak naturally, release —
+          your words land in whatever app is in front of you, cleaned up by AI.
+        </p>
+
+        <div class="hero__cta reveal">
+          <a class="btn btn--primary" href="#download">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.464 2.273-1.225 3.095-.823.879-2.184 1.563-3.302 1.477-.144-1.122.41-2.292 1.181-3.094.86-.892 2.319-1.572 3.346-1.478ZM20.6 17.3c-.582 1.295-.86 1.873-1.61 3.018-1.045 1.6-2.517 3.591-4.34 3.607-1.622.015-2.04-1.057-4.242-1.045-2.202.012-2.662 1.064-4.285 1.05-1.823-.017-3.218-1.815-4.263-3.415C-.93 16.94-1.247 11.69 1.07 8.86 2.708 6.864 5.27 5.69 7.685 5.733c2.458.043 4.012 1.347 6.044 1.347 1.972 0 3.173-1.348 6.013-1.348 2.146.013 4.41 1.169 6.018 3.187-5.297 2.901-4.438 10.453-1.16 8.381Z"/></svg>
+            Download for Mac
+          </a>
+          <a class="btn btn--ghost" href="#how">
+            See how it works
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06L7.28 11.78a.75.75 0 1 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z"/></svg>
+          </a>
+        </div>
+
+        <div class="hero__meta reveal">
+          <span>Free during beta</span>
+          <span class="sep">·</span>
+          <span>Works in any text field</span>
+          <span class="sep">·</span>
+          <span>Your audio, your API key</span>
+        </div>
+
+        <!-- Floating menu-bar mock -->
+        <div class="hero__device reveal">
+          <div class="device" aria-hidden="true">
+            <div class="device__bar">
+              <div class="device__lights">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="device__url">stro speak · listening</div>
+            </div>
+            <div class="device__body">
+              <div class="dictation">
+                <div class="dictation__mic">
+                  <div class="mic-pulse"></div>
+                  <div class="mic-pulse mic-pulse--2"></div>
+                  <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+                    <rect x="11" y="4" width="10" height="18" rx="5" fill="url(#lg)"/>
+                    <path d="M6 14v2a10 10 0 0 0 20 0v-2" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+                    <path d="M16 26v4" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="dictation__wave" id="wave">
+                  <!-- bars injected by JS -->
+                </div>
+                <div class="dictation__caption" id="caption">
+                  <span class="caret"></span>
+                </div>
+                <div class="dictation__hint">
+                  <kbd>Hold</kbd> <span class="kbd kbd--fn">fn</span> <span>to talk</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a class="hero__scroll" href="#features" aria-label="Scroll">
+        <span></span>
+      </a>
+    </section>
+
+    <!-- Marquee -->
+    <section class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span>Emails</span><span>·</span>
+        <span>Slack</span><span>·</span>
+        <span>Notion</span><span>·</span>
+        <span>Cursor</span><span>·</span>
+        <span>Linear</span><span>·</span>
+        <span>iMessage</span><span>·</span>
+        <span>VS Code</span><span>·</span>
+        <span>Terminal</span><span>·</span>
+        <span>Figma</span><span>·</span>
+        <span>Anything with a text field</span><span>·</span>
+
+        <span>Emails</span><span>·</span>
+        <span>Slack</span><span>·</span>
+        <span>Notion</span><span>·</span>
+        <span>Cursor</span><span>·</span>
+        <span>Linear</span><span>·</span>
+        <span>iMessage</span><span>·</span>
+        <span>VS Code</span><span>·</span>
+        <span>Terminal</span><span>·</span>
+        <span>Figma</span><span>·</span>
+        <span>Anything with a text field</span><span>·</span>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="eyebrow">Features</span>
+          <h2>Dictation that gets out of your way.</h2>
+          <p>Built around a single muscle-memory move: press, speak, release. Everything else is automatic.</p>
+        </header>
+
+        <div class="cards">
+          <article class="card reveal" style="--d:0ms">
+            <div class="card__icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/></svg>
+            </div>
+            <h3>Hold-to-talk, anywhere</h3>
+            <p>A global hotkey works system-wide — even in apps that don't support dictation natively. Tap-to-toggle is one keypress away.</p>
+          </article>
+
+          <article class="card reveal" style="--d:60ms">
+            <div class="card__icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>
+            </div>
+            <h3>AI cleanup, on the fly</h3>
+            <p>Filler words removed, punctuation added, tone preserved. Powered by your choice of OpenAI-compatible model, with Groq fallback.</p>
+          </article>
+
+          <article class="card reveal" style="--d:120ms">
+            <div class="card__icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
+            </div>
+            <h3>Screen-aware context</h3>
+            <p>Knows your active window, selected text, and (optionally) a screenshot — so "fix this paragraph" actually fixes <em>that</em> paragraph.</p>
+          </article>
+
+          <article class="card reveal" style="--d:180ms">
+            <div class="card__icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h3>Your keys, your audio</h3>
+            <p>API keys live in macOS Keychain. Audio goes straight to the endpoint you configure — no Stro Speak servers in the loop.</p>
+          </article>
+
+          <article class="card reveal" style="--d:240ms">
+            <div class="card__icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.5-7.1"/><path d="M21 4v5h-5"/></svg>
+            </div>
+            <h3>Pipeline history</h3>
+            <p>Every transcript is logged locally with timing and model details, so you can audit, replay, or copy a past dictation.</p>
+          </article>
+
+          <article class="card reveal" style="--d:300ms">
+            <div class="card__icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06A2 2 0 1 1 4.13 16.93l.06-.06A1.7 1.7 0 0 0 4.54 15a1.7 1.7 0 0 0-1.55-1.03H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.64 8.86 1.7 1.7 0 0 0 4.3 7l-.06-.06A2 2 0 1 1 7.07 4.1l.06.06A1.7 1.7 0 0 0 9 4.54 1.7 1.7 0 0 0 10.03 3V3a2 2 0 0 1 4 0v.09c0 .69.42 1.3 1.03 1.55a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87c.25.61.86 1.03 1.55 1.03H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.03Z"/></svg>
+            </div>
+            <h3>Configurable everything</h3>
+            <p>Custom hotkeys, endpoint URLs, models, prompts. The defaults work — the knobs are there when you need them.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section section--alt" id="how">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="eyebrow">How it works</span>
+          <h2>From key-down to keystrokes in one breath.</h2>
+          <p>Four stages, all happening between the moment you start talking and the moment you stop.</p>
+        </header>
+
+        <ol class="steps">
+          <li class="step reveal" style="--d:0ms">
+            <div class="step__num">01</div>
+            <h3>You press</h3>
+            <p>A global hotkey (default: hold <kbd>fn</kbd>) opens a mic stream and shows the recording overlay.</p>
+            <div class="step__viz step__viz--press">
+              <div class="key">fn</div>
+              <div class="ripple"></div>
+            </div>
+          </li>
+
+          <li class="step reveal" style="--d:120ms">
+            <div class="step__num">02</div>
+            <h3>You speak</h3>
+            <p>Audio is captured locally with level metering. Stop talking, release the key — recording ends instantly.</p>
+            <div class="step__viz step__viz--speak">
+              <div class="bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            </div>
+          </li>
+
+          <li class="step reveal" style="--d:240ms">
+            <div class="step__num">03</div>
+            <h3>AI cleans</h3>
+            <p>Transcribed by your chosen endpoint, then polished by an LLM that sees the active window for context.</p>
+            <div class="step__viz step__viz--ai">
+              <div class="ai-chip">
+                <span class="ai-dot"></span>
+                <span class="ai-dot"></span>
+                <span class="ai-dot"></span>
+              </div>
+            </div>
+          </li>
+
+          <li class="step reveal" style="--d:360ms">
+            <div class="step__num">04</div>
+            <h3>It pastes</h3>
+            <p>The cleaned text is dropped into the focused field — Slack, an email, your editor, anywhere.</p>
+            <div class="step__viz step__viz--paste">
+              <div class="cursor">|</div>
+              <div class="paste-text"></div>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Shortcuts / config -->
+    <section class="section" id="shortcuts">
+      <div class="container split">
+        <div class="split__left reveal">
+          <span class="eyebrow">Shortcuts</span>
+          <h2>Muscle memory in two keys.</h2>
+          <p>Defaults are quiet and out of the way. Rebind anything in Settings if your fingers disagree.</p>
+
+          <ul class="kbds">
+            <li>
+              <div class="kbds__keys">
+                <span class="kbd kbd--fn">fn</span>
+              </div>
+              <div class="kbds__meta">
+                <strong>Hold to talk</strong>
+                <span>Press and hold while you speak. Release to send.</span>
+              </div>
+            </li>
+            <li>
+              <div class="kbds__keys">
+                <span class="kbd">⌘</span><span class="plus">+</span><span class="kbd kbd--fn">fn</span>
+              </div>
+              <div class="kbds__meta">
+                <strong>Tap to toggle</strong>
+                <span>Hands-free recording. Tap again to stop and paste.</span>
+              </div>
+            </li>
+            <li>
+              <div class="kbds__keys">
+                <span class="kbd">esc</span>
+              </div>
+              <div class="kbds__meta">
+                <strong>Cancel</strong>
+                <span>Discard a recording without transcribing or pasting.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="split__right reveal">
+          <div class="terminal">
+            <div class="terminal__bar">
+              <span></span><span></span><span></span>
+              <em>~ stro speak / settings.json</em>
+            </div>
+            <pre class="terminal__body"><code><span class="c-key">"hotkey"</span>: {
+  <span class="c-key">"hold"</span>: <span class="c-str">"fn"</span>,
+  <span class="c-key">"toggle"</span>: <span class="c-str">"cmd+fn"</span>
+},
+<span class="c-key">"transcription"</span>: {
+  <span class="c-key">"endpoint"</span>: <span class="c-str">"https://api.openai.com/v1"</span>,
+  <span class="c-key">"model"</span>:    <span class="c-str">"whisper-1"</span>
+},
+<span class="c-key">"cleanup"</span>: {
+  <span class="c-key">"model"</span>:    <span class="c-str">"gpt-4o-mini"</span>,
+  <span class="c-key">"fallback"</span>: <span class="c-str">"groq/llama-3.3-70b"</span>,
+  <span class="c-key">"context"</span>:  [<span class="c-str">"active-window"</span>, <span class="c-str">"selection"</span>]
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="section section--stats">
+      <div class="container stats">
+        <div class="stat reveal">
+          <div class="stat__num" data-target="180" data-suffix=" wpm">0</div>
+          <div class="stat__label">Average speaking speed — about 3× typing.</div>
+        </div>
+        <div class="stat reveal" style="--d:120ms">
+          <div class="stat__num" data-target="900" data-suffix=" ms">0</div>
+          <div class="stat__label">Median round-trip from release to paste on a fast network.</div>
+        </div>
+        <div class="stat reveal" style="--d:240ms">
+          <div class="stat__num" data-target="0" data-prefix="$" data-suffix=" / mo">0</div>
+          <div class="stat__label">Stro Speak is free. You pay only your model provider.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section section--alt" id="faq">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="eyebrow">FAQ</span>
+          <h2>Quick answers.</h2>
+        </header>
+
+        <div class="faq">
+          <details class="faq__item reveal" open>
+            <summary>What macOS versions are supported?<span class="chev">+</span></summary>
+            <p>macOS 13 Ventura and later, on both Apple Silicon and Intel Macs.</p>
+          </details>
+          <details class="faq__item reveal">
+            <summary>Where does my audio go?<span class="chev">+</span></summary>
+            <p>Straight from your Mac to whichever OpenAI-compatible endpoint you've configured — by default, OpenAI. Nothing routes through Stro Speak's infrastructure.</p>
+          </details>
+          <details class="faq__item reveal">
+            <summary>Do I need an API key?<span class="chev">+</span></summary>
+            <p>Yes. You bring your own — from OpenAI, Groq, or any compatible provider. It's stored in macOS Keychain and never leaves your machine.</p>
+          </details>
+          <details class="faq__item reveal">
+            <summary>What permissions does it need?<span class="chev">+</span></summary>
+            <p>Microphone (to record), Accessibility (to paste into other apps), and optionally Screen Recording (to capture context). You'll be prompted on first launch.</p>
+          </details>
+          <details class="faq__item reveal">
+            <summary>Is it open source?<span class="chev">+</span></summary>
+            <p>The app is a refactor of <a href="https://github.com/zachlatta/freeflow" target="_blank" rel="noopener">FreeFlow</a> (MIT). Check the repo for the current license and source.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download -->
+    <section class="section download" id="download">
+      <div class="container download__inner reveal">
+        <h2>Get Stro Speak.</h2>
+        <p>One drag into Applications. Hold a key. Start talking.</p>
+
+        <div class="download__cta">
+          <a class="btn btn--primary btn--lg" href="#" id="downloadBtn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.464 2.273-1.225 3.095-.823.879-2.184 1.563-3.302 1.477-.144-1.122.41-2.292 1.181-3.094.86-.892 2.319-1.572 3.346-1.478ZM20.6 17.3c-.582 1.295-.86 1.873-1.61 3.018-1.045 1.6-2.517 3.591-4.34 3.607-1.622.015-2.04-1.057-4.242-1.045-2.202.012-2.662 1.064-4.285 1.05-1.823-.017-3.218-1.815-4.263-3.415C-.93 16.94-1.247 11.69 1.07 8.86 2.708 6.864 5.27 5.69 7.685 5.733c2.458.043 4.012 1.347 6.044 1.347 1.972 0 3.173-1.348 6.013-1.348 2.146.013 4.41 1.169 6.018 3.187-5.297 2.901-4.438 10.453-1.16 8.381Z"/></svg>
+            Download for macOS
+          </a>
+          <div class="download__meta">
+            <span>~12 MB</span><span class="sep">·</span>
+            <span>Universal Binary</span><span class="sep">·</span>
+            <span>Notarized</span>
+          </div>
+        </div>
+
+        <div class="download__alt">
+          Prefer to build it yourself? <a href="https://github.com/aaali/strospeak" target="_blank" rel="noopener">Clone the source on GitHub →</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <span class="nav__logo" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="18" height="18">
+            <rect x="11" y="4" width="10" height="18" rx="5" fill="url(#lg)"/>
+            <path d="M6 14v2a10 10 0 0 0 20 0v-2" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <path d="M16 26v4" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>Stro Speak</span>
+      </div>
+      <div class="footer__links">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#faq">FAQ</a>
+        <a href="https://github.com/aaali/strospeak" target="_blank" rel="noopener">GitHub</a>
+      </div>
+      <div class="footer__legal">
+        © <span id="year"></span> Stro Speak. Made for people who'd rather talk than type.
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
