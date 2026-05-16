@@ -843,56 +843,11 @@ struct GeneralSettingsView: View {
     }
 
     private var accountSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if appState.isSignedIn {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(appState.accountEmail.isEmpty ? "Signed in" : appState.accountEmail)
-                            .font(.headline)
-                        Text(appState.planName.isEmpty ? "Plan unavailable" : appState.planName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button("Sign Out") {
-                        appState.isSignedIn = false
-                        appState.accountEmail = ""
-                    }
-                }
-
-                Text(appState.usageStatusText.isEmpty ? "Usage information is unavailable." : appState.usageStatusText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if let url = URL(string: appState.manageBillingURL), !appState.manageBillingURL.isEmpty {
-                    Button("Manage Billing") {
-                        NSWorkspace.shared.open(url)
-                    }
-                } else {
-                    Button("Manage Billing") {}
-                        .disabled(true)
-                    Text("Billing management will appear here when your subscription is connected.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } else {
-                HStack(spacing: 10) {
-                    Image(systemName: "person.crop.circle.badge.exclamationmark")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Signed out")
-                            .font(.headline)
-                        Text("Account sign-in and subscription usage will appear here when the hosted service is connected.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Button("Sign In") {}
-                    .disabled(true)
-            }
-        }
+        AccountSectionView(
+            auth: appState.authService,
+            subscription: appState.subscription,
+            usage: appState.usageTracker
+        )
     }
 
     private var startupSection: some View {

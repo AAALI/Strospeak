@@ -20,6 +20,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             name: .showSettings,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleShowPaywall),
+            name: .showPaywall,
+            object: nil
+        )
 
         if !appState.hasCompletedSetup {
             showSetupWindow()
@@ -83,6 +89,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func handleShowSettings() {
+        showSettingsWindow()
+    }
+
+    @objc private func handleShowPaywall() {
+        appState.selectedSettingsTab = .account
         showSettingsWindow()
     }
 

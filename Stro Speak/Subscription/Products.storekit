@@ -1,0 +1,66 @@
+{
+  "identifier" : "5E8B3D6F-7E2D-4B9D-9C7A-STROSPEAK001",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21478356",
+      "localizations" : [],
+      "name" : "Stro Speak Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "00000001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited dictation, screen-context cleanup, and priority models.",
+              "displayName" : "Stro Speak Pro (Monthly)",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "siro.company.strospeak.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro Monthly",
+          "subscriptionGroupID" : "21478356",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "49.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "00000002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited dictation, screen-context cleanup, and priority models. Save 16% vs monthly.",
+              "displayName" : "Stro Speak Pro (Yearly)",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "siro.company.strospeak.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro Yearly",
+          "subscriptionGroupID" : "21478356",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
