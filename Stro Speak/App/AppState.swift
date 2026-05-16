@@ -2644,7 +2644,9 @@ final class AppState: ObservableObject, @unchecked Sendable {
         if let startedAt = recordingStartedAt {
             let elapsed = CFAbsoluteTimeGetCurrent() - startedAt
             recordingStartedAt = nil
-            usageTracker.record(seconds: Int(elapsed.rounded()))
+            MainActor.assumeIsolated {
+                usageTracker.record(seconds: Int(elapsed.rounded()))
+            }
         }
         restoreAudioInterruptionIfNeeded()
         isTranscribing = true
