@@ -186,19 +186,23 @@ struct SetupView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 10) {
-                        Image(systemName: appState.isSignedIn ? "checkmark.circle.fill" : "person.crop.circle.badge.exclamationmark")
-                            .foregroundStyle(appState.isSignedIn ? .green : .secondary)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(appState.isSignedIn ? "Signed in" : "Sign-in unavailable in this build")
-                                .font(.headline)
-                            Text(appState.isSignedIn && !appState.accountEmail.isEmpty
-                                 ? appState.accountEmail
-                                 : "Continue setup now. Connect the hosted account flow before public launch.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                Group {
+                    if let account = appState.authService.currentAccount {
+                        HStack(spacing: 10) {
+                            Image(systemName: account.provider == .apple ? "apple.logo" : "envelope.fill")
+                                .foregroundStyle(.green)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Signed in").font(.headline)
+                                Text(account.displayLabel)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button("Sign Out") { appState.authService.signOut() }
+                                .controlSize(.small)
                         }
+                    } else {
+                        SignInView(auth: appState.authService)
                     }
                 }
                 .padding(16)

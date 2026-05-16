@@ -218,11 +218,6 @@ final class AppState: ObservableObject, @unchecked Sendable {
     private let userDisplayNameStorageKey = "user_display_name"
     private let userProfileNoteStorageKey = "user_profile_note"
     private let developerSettingsUnlockedStorageKey = "developer_settings_unlocked"
-    private let accountEmailStorageKey = "account_email"
-    private let accountPlanNameStorageKey = "account_plan_name"
-    private let accountUsageStatusStorageKey = "account_usage_status"
-    private let accountManageBillingURLStorageKey = "account_manage_billing_url"
-    private let accountSignedInStorageKey = "account_signed_in"
     private let contextScreenshotMaxDimensionStorageKey = "context_screenshot_max_dimension"
     private let shortcutStartDelayStorageKey = "shortcut_start_delay"
     private let preserveClipboardStorageKey = "preserve_clipboard"
@@ -486,35 +481,18 @@ final class AppState: ObservableObject, @unchecked Sendable {
         AppBuild.isDevBundle || developerSettingsUnlocked
     }
 
-    @Published var accountEmail: String {
-        didSet {
-            UserDefaults.standard.set(accountEmail, forKey: accountEmailStorageKey)
-        }
-    }
+    // MARK: - Authentication & subscription
 
-    @Published var planName: String {
-        didSet {
-            UserDefaults.standard.set(planName, forKey: accountPlanNameStorageKey)
-        }
-    }
+    let authService = AuthenticationService.shared
+    let subscription = SubscriptionService.shared
+    let usageTracker = UsageTracker.shared
 
-    @Published var usageStatusText: String {
-        didSet {
-            UserDefaults.standard.set(usageStatusText, forKey: accountUsageStatusStorageKey)
-        }
-    }
+    /// When the user attempts to start recording but is out of quota we
+    /// surface this reason in the menu/settings so the paywall can pop.
+    @Published var quotaExceededReason: String?
 
-    @Published var manageBillingURL: String {
-        didSet {
-            UserDefaults.standard.set(manageBillingURL, forKey: accountManageBillingURLStorageKey)
-        }
-    }
-
-    @Published var isSignedIn: Bool {
-        didSet {
-            UserDefaults.standard.set(isSignedIn, forKey: accountSignedInStorageKey)
-        }
-    }
+    private var recordingStartedAt: CFAbsoluteTime?
+    private var authSubscriptionCancellables: Set<AnyCancellable> = []
 
     @Published var outputLanguage: String {
         didSet {
@@ -705,11 +683,6 @@ final class AppState: ObservableObject, @unchecked Sendable {
         let userDisplayName = UserDefaults.standard.string(forKey: userDisplayNameStorageKey) ?? ""
         let userProfileNote = UserDefaults.standard.string(forKey: userProfileNoteStorageKey) ?? ""
         let developerSettingsUnlocked = UserDefaults.standard.bool(forKey: developerSettingsUnlockedStorageKey)
-        let accountEmail = UserDefaults.standard.string(forKey: accountEmailStorageKey) ?? ""
-        let planName = UserDefaults.standard.string(forKey: accountPlanNameStorageKey) ?? ""
-        let usageStatusText = UserDefaults.standard.string(forKey: accountUsageStatusStorageKey) ?? ""
-        let manageBillingURL = UserDefaults.standard.string(forKey: accountManageBillingURLStorageKey) ?? ""
-        let isSignedIn = UserDefaults.standard.bool(forKey: accountSignedInStorageKey)
         let outputLanguage = UserDefaults.standard.string(forKey: outputLanguageStorageKey) ?? ""
         let storedContextScreenshotMaxDimension = UserDefaults.standard.object(forKey: contextScreenshotMaxDimensionStorageKey) != nil
             ? UserDefaults.standard.integer(forKey: contextScreenshotMaxDimensionStorageKey)
@@ -823,11 +796,6 @@ final class AppState: ObservableObject, @unchecked Sendable {
         self.userDisplayName = userDisplayName
         self.userProfileNote = userProfileNote
         self.developerSettingsUnlocked = developerSettingsUnlocked
-        self.accountEmail = accountEmail
-        self.planName = planName
-        self.usageStatusText = usageStatusText
-        self.manageBillingURL = manageBillingURL
-        self.isSignedIn = isSignedIn
         self.outputLanguage = outputLanguage
         self.shortcutStartDelay = shortcutStartDelay
         self.preserveClipboard = preserveClipboard
@@ -874,6 +842,43 @@ final class AppState: ObservableObject, @unchecked Sendable {
 
         // Clear any stale recording flag left over from an unclean exit.
         AppState.writeRecordingStateFlag(false)
+
+        // Re-render Settings/MenuBar when auth, subscription, or usage change.
+        authService.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &authSubscriptionCancellables)
+        subscription.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &authSubscriptionCancellables)
+        usageTracker.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &authSubscriptionCancellables)
+    }
+
+    // MARK: - Quota gating
+
+    /// Returns true if a new dictation session is allowed under the current
+    /// tier. Side-effect: sets `quotaExceededReason` for the UI on failure.
+    func canStartTranscriptionSession() -> Bool {
+        let tier = subscription.activeTier
+        if usageTracker.canStartNewSession(tier: tier) {
+            quotaExceededReason = nil
+            return true
+        }
+        if tier.isPaid {
+            quotaExceededReason = "You've hit the \(tier.softCapAudioSeconds / 3600)-hour fair-use cap for this month. Usage resets on the 1st."
+        } else {
+            let minutes = (tier.monthlyAudioSecondsLimit ?? 0) / 60
+            quotaExceededReason = "You've used your \(minutes) free minutes this month. Upgrade to Pro for unlimited dictation."
+        }
+        Analytics.capture("quota_exceeded", properties: [
+            "tier": tier.rawValue,
+            "seconds_used": usageTracker.secondsUsedThisPeriod,
+        ])
+        return false
     }
 
     deinit {
@@ -2034,6 +2039,13 @@ final class AppState: ObservableObject, @unchecked Sendable {
         let t0 = CFAbsoluteTimeGetCurrent()
         os_log(.info, log: recordingLog, "startRecording() entered")
         guard !isRecording && !isTranscribing else { return }
+        guard canStartTranscriptionSession() else {
+            statusText = "Quota reached"
+            errorMessage = quotaExceededReason
+            playAlertSound(named: "Basso")
+            NotificationCenter.default.post(name: .showPaywall, object: nil)
+            return
+        }
         let scheduledSelectionSnapshot = pendingSelectionSnapshot
         let scheduledManualCommandInvocation = pendingManualCommandInvocation
         cancelPendingShortcutStart()
@@ -2244,6 +2256,7 @@ final class AppState: ObservableObject, @unchecked Sendable {
         errorMessage = nil
 
         isRecording = true
+        recordingStartedAt = CFAbsoluteTimeGetCurrent()
         // PostHog: Track recording start
         Analytics.capture("recording_started", properties: [
             "trigger_mode": triggerMode.rawValue,
@@ -2626,6 +2639,11 @@ final class AppState: ObservableObject, @unchecked Sendable {
         lastContextScreenshotDataURL = nil
         lastContextScreenshotStatus = "No screenshot"
         isRecording = false
+        if let startedAt = recordingStartedAt {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startedAt
+            recordingStartedAt = nil
+            usageTracker.record(seconds: Int(elapsed.rounded()))
+        }
         restoreAudioInterruptionIfNeeded()
         isTranscribing = true
         statusText = "Preparing audio..."
