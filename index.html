@@ -4,12 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Stro Speak — Hold to talk. Release to type.</title>
-  <meta name="description" content="Stro Speak is a macOS menu-bar dictation app. Hold a key, talk, release — your cleaned-up words appear in whatever app you're in." />
+  <meta name="description" content="A macOS menu-bar dictation app. Hold a key to talk, release to paste the cleaned transcription into whatever app you're in." />
   <meta name="theme-color" content="#08090b" />
 
+  <link rel="icon" type="image/png" href="strospeak-256.png" />
+  <link rel="apple-touch-icon" href="strospeak-256.png" />
+
   <meta property="og:title" content="Stro Speak — Hold to talk. Release to type." />
-  <meta property="og:description" content="A menu-bar dictation app for macOS. AI cleans your transcript and pastes it into the focused field." />
+  <meta property="og:description" content="A macOS menu-bar dictation app. Hold a key, talk, release — your cleaned-up words land in whatever app you're in." />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="strospeak.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -30,19 +34,7 @@
   <!-- Nav -->
   <header class="nav" id="nav">
     <a class="nav__brand" href="#top" aria-label="Stro Speak home">
-      <span class="nav__logo" aria-hidden="true">
-        <svg viewBox="0 0 32 32" width="22" height="22">
-          <defs>
-            <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#a78bfa"/>
-              <stop offset="100%" stop-color="#22d3ee"/>
-            </linearGradient>
-          </defs>
-          <rect x="11" y="4" width="10" height="18" rx="5" fill="url(#lg)"/>
-          <path d="M6 14v2a10 10 0 0 0 20 0v-2" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-          <path d="M16 26v4" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round"/>
-        </svg>
-      </span>
+      <img class="nav__icon" src="strospeak-256.png" alt="" width="28" height="28" />
       <span class="nav__name">Stro Speak</span>
     </a>
     <nav class="nav__links" aria-label="Primary">
@@ -61,9 +53,13 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero__inner">
+        <div class="hero__icon reveal" aria-hidden="true">
+          <img src="strospeak.png" alt="Stro Speak app icon" width="120" height="120" />
+        </div>
+
         <div class="hero__badge reveal">
           <span class="dot"></span>
-          <span>For macOS · Apple Silicon &amp; Intel</span>
+          <span>For macOS · Menu-bar app</span>
         </div>
 
         <h1 class="hero__title reveal">
@@ -72,13 +68,15 @@
         </h1>
 
         <p class="hero__sub reveal">
-          Stro Speak lives in your menu bar. Press and hold a key, speak naturally, release —
-          your words land in whatever app is in front of you, cleaned up by AI.
+          Stro Speak lives in your menu bar. Hold a hotkey, speak naturally, release —
+          your transcription is cleaned up by an LLM and pasted straight into the focused app.
         </p>
 
         <div class="hero__cta reveal">
           <a class="btn btn--primary" href="#download">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.464 2.273-1.225 3.095-.823.879-2.184 1.563-3.302 1.477-.144-1.122.41-2.292 1.181-3.094.86-.892 2.319-1.572 3.346-1.478ZM20.6 17.3c-.582 1.295-.86 1.873-1.61 3.018-1.045 1.6-2.517 3.591-4.34 3.607-1.622.015-2.04-1.057-4.242-1.045-2.202.012-2.662 1.064-4.285 1.05-1.823-.017-3.218-1.815-4.263-3.415C-.93 16.94-1.247 11.69 1.07 8.86 2.708 6.864 5.27 5.69 7.685 5.733c2.458.043 4.012 1.347 6.044 1.347 1.972 0 3.173-1.348 6.013-1.348 2.146.013 4.41 1.169 6.018 3.187-5.297 2.901-4.438 10.453-1.16 8.381Z"/></svg>
+            <span class="apple-mark" aria-hidden="true">
+              <svg viewBox="0 0 384 512" width="16" height="18" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+            </span>
             Download for Mac
           </a>
           <a class="btn btn--ghost" href="#how">
@@ -88,11 +86,11 @@
         </div>
 
         <div class="hero__meta reveal">
-          <span>Free during beta</span>
+          <span>Bring your own API key</span>
           <span class="sep">·</span>
-          <span>Works in any text field</span>
+          <span>OpenAI-compatible</span>
           <span class="sep">·</span>
-          <span>Your audio, your API key</span>
+          <span>Optional Groq fallback</span>
         </div>
 
         <!-- Floating menu-bar mock -->
@@ -109,11 +107,7 @@
                 <div class="dictation__mic">
                   <div class="mic-pulse"></div>
                   <div class="mic-pulse mic-pulse--2"></div>
-                  <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
-                    <rect x="11" y="4" width="10" height="18" rx="5" fill="url(#lg)"/>
-                    <path d="M6 14v2a10 10 0 0 0 20 0v-2" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-                    <path d="M16 26v4" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round"/>
-                  </svg>
+                  <img src="strospeak-256.png" alt="" width="44" height="44" />
                 </div>
                 <div class="dictation__wave" id="wave">
                   <!-- bars injected by JS -->
@@ -122,7 +116,7 @@
                   <span class="caret"></span>
                 </div>
                 <div class="dictation__hint">
-                  <kbd>Hold</kbd> <span class="kbd kbd--fn">fn</span> <span>to talk</span>
+                  <span>Hold</span> <span class="kbd kbd--fn">fn</span> <span>to talk</span>
                 </div>
               </div>
             </div>
@@ -138,27 +132,27 @@
     <!-- Marquee -->
     <section class="marquee" aria-hidden="true">
       <div class="marquee__track">
-        <span>Emails</span><span>·</span>
+        <span>Mail</span><span>·</span>
+        <span>Messages</span><span>·</span>
         <span>Slack</span><span>·</span>
+        <span>Notes</span><span>·</span>
         <span>Notion</span><span>·</span>
-        <span>Cursor</span><span>·</span>
-        <span>Linear</span><span>·</span>
-        <span>iMessage</span><span>·</span>
         <span>VS Code</span><span>·</span>
+        <span>Xcode</span><span>·</span>
         <span>Terminal</span><span>·</span>
-        <span>Figma</span><span>·</span>
-        <span>Anything with a text field</span><span>·</span>
+        <span>Safari</span><span>·</span>
+        <span>Any text field</span><span>·</span>
 
-        <span>Emails</span><span>·</span>
+        <span>Mail</span><span>·</span>
+        <span>Messages</span><span>·</span>
         <span>Slack</span><span>·</span>
+        <span>Notes</span><span>·</span>
         <span>Notion</span><span>·</span>
-        <span>Cursor</span><span>·</span>
-        <span>Linear</span><span>·</span>
-        <span>iMessage</span><span>·</span>
         <span>VS Code</span><span>·</span>
+        <span>Xcode</span><span>·</span>
         <span>Terminal</span><span>·</span>
-        <span>Figma</span><span>·</span>
-        <span>Anything with a text field</span><span>·</span>
+        <span>Safari</span><span>·</span>
+        <span>Any text field</span><span>·</span>
       </div>
     </section>
 
@@ -168,7 +162,7 @@
         <header class="section__head reveal">
           <span class="eyebrow">Features</span>
           <h2>Dictation that gets out of your way.</h2>
-          <p>Built around a single muscle-memory move: press, speak, release. Everything else is automatic.</p>
+          <p>One muscle-memory move: press, speak, release. Everything between is automatic.</p>
         </header>
 
         <div class="cards">
@@ -176,16 +170,16 @@
             <div class="card__icon">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/></svg>
             </div>
-            <h3>Hold-to-talk, anywhere</h3>
-            <p>A global hotkey works system-wide — even in apps that don't support dictation natively. Tap-to-toggle is one keypress away.</p>
+            <h3>Global hold-to-talk</h3>
+            <p>A system-wide hotkey works in any app. Hold <kbd>fn</kbd> to talk, or press <kbd>⌘</kbd>+<kbd>fn</kbd> for hands-free toggle mode.</p>
           </article>
 
           <article class="card reveal" style="--d:60ms">
             <div class="card__icon">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>
             </div>
-            <h3>AI cleanup, on the fly</h3>
-            <p>Filler words removed, punctuation added, tone preserved. Powered by your choice of OpenAI-compatible model, with Groq fallback.</p>
+            <h3>LLM post-processing</h3>
+            <p>Raw transcripts are polished by an OpenAI-compatible model — punctuation, capitalization, filler removed — before they're pasted.</p>
           </article>
 
           <article class="card reveal" style="--d:120ms">
@@ -193,31 +187,31 @@
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
             </div>
             <h3>Screen-aware context</h3>
-            <p>Knows your active window, selected text, and (optionally) a screenshot — so "fix this paragraph" actually fixes <em>that</em> paragraph.</p>
+            <p>Active window title, selected text, and an optional ScreenCaptureKit snapshot are sent as context — so the LLM understands <em>what</em> you're talking about.</p>
           </article>
 
           <article class="card reveal" style="--d:180ms">
             <div class="card__icon">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v3a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"/><path d="m4 9 2.5 2.5M20 9l-2.5 2.5M12 13v8M9 21h6"/></svg>
             </div>
-            <h3>Your keys, your audio</h3>
-            <p>API keys live in macOS Keychain. Audio goes straight to the endpoint you configure — no Stro Speak servers in the loop.</p>
+            <h3>Groq fallback</h3>
+            <p>Configure a fallback provider (defaults to Groq with <code>openai/gpt-oss-20b</code>) so dictation keeps working when your primary endpoint hiccups.</p>
           </article>
 
           <article class="card reveal" style="--d:240ms">
             <div class="card__icon">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.5-7.1"/><path d="M21 4v5h-5"/></svg>
             </div>
-            <h3>Pipeline history</h3>
-            <p>Every transcript is logged locally with timing and model details, so you can audit, replay, or copy a past dictation.</p>
+            <h3>Local pipeline history</h3>
+            <p>Each dictation is logged on-device with timings, models used, and the cleaned output — replay or copy any past transcript.</p>
           </article>
 
           <article class="card reveal" style="--d:300ms">
             <div class="card__icon">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06A2 2 0 1 1 4.13 16.93l.06-.06A1.7 1.7 0 0 0 4.54 15a1.7 1.7 0 0 0-1.55-1.03H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.64 8.86 1.7 1.7 0 0 0 4.3 7l-.06-.06A2 2 0 1 1 7.07 4.1l.06.06A1.7 1.7 0 0 0 9 4.54 1.7 1.7 0 0 0 10.03 3V3a2 2 0 0 1 4 0v.09c0 .69.42 1.3 1.03 1.55a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87c.25.61.86 1.03 1.55 1.03H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.03Z"/></svg>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
-            <h3>Configurable everything</h3>
-            <p>Custom hotkeys, endpoint URLs, models, prompts. The defaults work — the knobs are there when you need them.</p>
+            <h3>Keys in the Keychain</h3>
+            <p>API keys live in macOS Keychain. Audio and prompts go directly from your Mac to the endpoint you configure — never through us.</p>
           </article>
         </div>
       </div>
@@ -228,15 +222,15 @@
       <div class="container">
         <header class="section__head reveal">
           <span class="eyebrow">How it works</span>
-          <h2>From key-down to keystrokes in one breath.</h2>
-          <p>Four stages, all happening between the moment you start talking and the moment you stop.</p>
+          <h2>The pipeline, end to end.</h2>
+          <p>Four stages between key-down and the cleaned text landing in your focused field.</p>
         </header>
 
         <ol class="steps">
           <li class="step reveal" style="--d:0ms">
             <div class="step__num">01</div>
-            <h3>You press</h3>
-            <p>A global hotkey (default: hold <kbd>fn</kbd>) opens a mic stream and shows the recording overlay.</p>
+            <h3>Hotkey fires</h3>
+            <p>Default hold is <kbd>fn</kbd>, toggle is <kbd>⌘</kbd>+<kbd>fn</kbd>. The recording overlay appears, audio capture begins.</p>
             <div class="step__viz step__viz--press">
               <div class="key">fn</div>
               <div class="ripple"></div>
@@ -245,8 +239,8 @@
 
           <li class="step reveal" style="--d:120ms">
             <div class="step__num">02</div>
-            <h3>You speak</h3>
-            <p>Audio is captured locally with level metering. Stop talking, release the key — recording ends instantly.</p>
+            <h3>Audio captured</h3>
+            <p><code>AudioRecorder</code> streams from the selected input device with live level metering, until you release the key.</p>
             <div class="step__viz step__viz--speak">
               <div class="bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
             </div>
@@ -254,8 +248,8 @@
 
           <li class="step reveal" style="--d:240ms">
             <div class="step__num">03</div>
-            <h3>AI cleans</h3>
-            <p>Transcribed by your chosen endpoint, then polished by an LLM that sees the active window for context.</p>
+            <h3>Transcribe &amp; clean</h3>
+            <p>Sent to an OpenAI-compatible transcription endpoint (default model <code>gpt-4o-mini-transcribe</code>), then an LLM polishes it with screen context.</p>
             <div class="step__viz step__viz--ai">
               <div class="ai-chip">
                 <span class="ai-dot"></span>
@@ -267,8 +261,8 @@
 
           <li class="step reveal" style="--d:360ms">
             <div class="step__num">04</div>
-            <h3>It pastes</h3>
-            <p>The cleaned text is dropped into the focused field — Slack, an email, your editor, anywhere.</p>
+            <h3>Paste into focused app</h3>
+            <p>The cleaned text is dropped into whatever text field is in front of you — Mail, Slack, your editor, Terminal, anything.</p>
             <div class="step__viz step__viz--paste">
               <div class="cursor">|</div>
               <div class="paste-text"></div>
@@ -284,7 +278,7 @@
         <div class="split__left reveal">
           <span class="eyebrow">Shortcuts</span>
           <h2>Muscle memory in two keys.</h2>
-          <p>Defaults are quiet and out of the way. Rebind anything in Settings if your fingers disagree.</p>
+          <p>Defaults are out of the way. Rebind anything from Settings if your fingers disagree.</p>
 
           <ul class="kbds">
             <li>
@@ -293,7 +287,7 @@
               </div>
               <div class="kbds__meta">
                 <strong>Hold to talk</strong>
-                <span>Press and hold while you speak. Release to send.</span>
+                <span>Hold while you speak. Release to transcribe and paste.</span>
               </div>
             </li>
             <li>
@@ -311,7 +305,7 @@
               </div>
               <div class="kbds__meta">
                 <strong>Cancel</strong>
-                <span>Discard a recording without transcribing or pasting.</span>
+                <span>Discard the current recording without transcribing.</span>
               </div>
             </li>
           </ul>
@@ -321,40 +315,28 @@
           <div class="terminal">
             <div class="terminal__bar">
               <span></span><span></span><span></span>
-              <em>~ stro speak / settings.json</em>
+              <em>~ stro speak / settings (defaults)</em>
             </div>
-            <pre class="terminal__body"><code><span class="c-key">"hotkey"</span>: {
-  <span class="c-key">"hold"</span>: <span class="c-str">"fn"</span>,
-  <span class="c-key">"toggle"</span>: <span class="c-str">"cmd+fn"</span>
-},
-<span class="c-key">"transcription"</span>: {
-  <span class="c-key">"endpoint"</span>: <span class="c-str">"https://api.openai.com/v1"</span>,
-  <span class="c-key">"model"</span>:    <span class="c-str">"whisper-1"</span>
-},
-<span class="c-key">"cleanup"</span>: {
-  <span class="c-key">"model"</span>:    <span class="c-str">"gpt-4o-mini"</span>,
-  <span class="c-key">"fallback"</span>: <span class="c-str">"groq/llama-3.3-70b"</span>,
-  <span class="c-key">"context"</span>:  [<span class="c-str">"active-window"</span>, <span class="c-str">"selection"</span>]
-}</code></pre>
-          </div>
-        </div>
-      </div>
-    </section>
+            <pre class="terminal__body"><code><span class="c-key">hotkey</span>:
+  <span class="c-key">hold</span>:   <span class="c-str">fn</span>
+  <span class="c-key">toggle</span>: <span class="c-str">cmd+fn</span>
 
-    <!-- Stats -->
-    <section class="section section--stats">
-      <div class="container stats">
-        <div class="stat reveal">
-          <div class="stat__num" data-target="180" data-suffix=" wpm">0</div>
-          <div class="stat__label">Average speaking speed — about 3× typing.</div>
-        </div>
-        <div class="stat reveal" style="--d:120ms">
-          <div class="stat__num" data-target="900" data-suffix=" ms">0</div>
-          <div class="stat__label">Median round-trip from release to paste on a fast network.</div>
-        </div>
-        <div class="stat reveal" style="--d:240ms">
-          <div class="stat__num" data-target="0" data-prefix="$" data-suffix=" / mo">0</div>
-          <div class="stat__label">Stro Speak is free. You pay only your model provider.</div>
+<span class="c-key">transcription</span>:
+  <span class="c-key">model</span>: <span class="c-str">gpt-4o-mini-transcribe</span>
+
+<span class="c-key">post_processing</span>:
+  <span class="c-key">model</span>:    <span class="c-str">gpt-5.4-nano</span>
+  <span class="c-key">fallback</span>: <span class="c-str">gpt-5.4-mini</span>
+
+<span class="c-key">fallback_provider</span>:
+  <span class="c-key">base_url</span>: <span class="c-str">https://api.groq.com/openai/v1</span>
+  <span class="c-key">model</span>:    <span class="c-str">openai/gpt-oss-20b</span>
+
+<span class="c-key">context</span>:
+  <span class="c-key">active_window</span>:    <span class="c-str">true</span>
+  <span class="c-key">selected_text</span>:    <span class="c-str">true</span>
+  <span class="c-key">screen_capture</span>:   <span class="c-str">optional</span></code></pre>
+          </div>
         </div>
       </div>
     </section>
@@ -369,24 +351,28 @@
 
         <div class="faq">
           <details class="faq__item reveal" open>
-            <summary>What macOS versions are supported?<span class="chev">+</span></summary>
-            <p>macOS 13 Ventura and later, on both Apple Silicon and Intel Macs.</p>
-          </details>
-          <details class="faq__item reveal">
-            <summary>Where does my audio go?<span class="chev">+</span></summary>
-            <p>Straight from your Mac to whichever OpenAI-compatible endpoint you've configured — by default, OpenAI. Nothing routes through Stro Speak's infrastructure.</p>
+            <summary>What macOS version do I need?<span class="chev">+</span></summary>
+            <p>Stro Speak targets macOS 26.2 (Tahoe). It's built against the current SDK, so a recent macOS install is required.</p>
           </details>
           <details class="faq__item reveal">
             <summary>Do I need an API key?<span class="chev">+</span></summary>
-            <p>Yes. You bring your own — from OpenAI, Groq, or any compatible provider. It's stored in macOS Keychain and never leaves your machine.</p>
+            <p>Yes — you bring your own. Stro Speak talks to any OpenAI-compatible endpoint for transcription and LLM cleanup. Defaults work with OpenAI and Groq; keys are stored in macOS Keychain.</p>
+          </details>
+          <details class="faq__item reveal">
+            <summary>What models does it use by default?<span class="chev">+</span></summary>
+            <p>Transcription: <code>gpt-4o-mini-transcribe</code>. LLM cleanup: <code>gpt-5.4-nano</code> with <code>gpt-5.4-mini</code> as fallback. The Groq fallback provider uses <code>openai/gpt-oss-20b</code>. All configurable in Settings.</p>
           </details>
           <details class="faq__item reveal">
             <summary>What permissions does it need?<span class="chev">+</span></summary>
-            <p>Microphone (to record), Accessibility (to paste into other apps), and optionally Screen Recording (to capture context). You'll be prompted on first launch.</p>
+            <p>Microphone (to record), Accessibility (to detect the cursor and paste into other apps), and optionally Screen Recording (for ScreenCaptureKit context snapshots). You'll be prompted on first launch.</p>
+          </details>
+          <details class="faq__item reveal">
+            <summary>Where does my audio go?<span class="chev">+</span></summary>
+            <p>Straight from your Mac to whichever endpoint you've configured. Stro Speak doesn't run any servers — audio and prompts never touch our infrastructure.</p>
           </details>
           <details class="faq__item reveal">
             <summary>Is it open source?<span class="chev">+</span></summary>
-            <p>The app is a refactor of <a href="https://github.com/zachlatta/freeflow" target="_blank" rel="noopener">FreeFlow</a> (MIT). Check the repo for the current license and source.</p>
+            <p>It's a heavily refactored fork of <a href="https://github.com/zachlatta/freeflow" target="_blank" rel="noopener">FreeFlow</a> (MIT). Source for the current build lives on <a href="https://github.com/AAALI/Strospeak" target="_blank" rel="noopener">GitHub</a>.</p>
           </details>
         </div>
       </div>
@@ -395,23 +381,24 @@
     <!-- Download -->
     <section class="section download" id="download">
       <div class="container download__inner reveal">
+        <img class="download__icon" src="strospeak.png" alt="Stro Speak app icon" width="96" height="96" />
         <h2>Get Stro Speak.</h2>
-        <p>One drag into Applications. Hold a key. Start talking.</p>
+        <p>Drop it in Applications. Hold a key. Start talking.</p>
 
         <div class="download__cta">
           <a class="btn btn--primary btn--lg" href="#" id="downloadBtn">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.464 2.273-1.225 3.095-.823.879-2.184 1.563-3.302 1.477-.144-1.122.41-2.292 1.181-3.094.86-.892 2.319-1.572 3.346-1.478ZM20.6 17.3c-.582 1.295-.86 1.873-1.61 3.018-1.045 1.6-2.517 3.591-4.34 3.607-1.622.015-2.04-1.057-4.242-1.045-2.202.012-2.662 1.064-4.285 1.05-1.823-.017-3.218-1.815-4.263-3.415C-.93 16.94-1.247 11.69 1.07 8.86 2.708 6.864 5.27 5.69 7.685 5.733c2.458.043 4.012 1.347 6.044 1.347 1.972 0 3.173-1.348 6.013-1.348 2.146.013 4.41 1.169 6.018 3.187-5.297 2.901-4.438 10.453-1.16 8.381Z"/></svg>
+            <span class="apple-mark" aria-hidden="true">
+              <svg viewBox="0 0 384 512" width="16" height="18" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+            </span>
             Download for macOS
           </a>
           <div class="download__meta">
-            <span>~12 MB</span><span class="sep">·</span>
-            <span>Universal Binary</span><span class="sep">·</span>
-            <span>Notarized</span>
+            <span>Requires macOS 26.2 (Tahoe)</span>
           </div>
         </div>
 
         <div class="download__alt">
-          Prefer to build it yourself? <a href="https://github.com/aaali/strospeak" target="_blank" rel="noopener">Clone the source on GitHub →</a>
+          Or build it yourself: <a href="https://github.com/AAALI/Strospeak" target="_blank" rel="noopener">clone the source on GitHub →</a>
         </div>
       </div>
     </section>
@@ -420,23 +407,17 @@
   <footer class="footer">
     <div class="container footer__inner">
       <div class="footer__brand">
-        <span class="nav__logo" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="18" height="18">
-            <rect x="11" y="4" width="10" height="18" rx="5" fill="url(#lg)"/>
-            <path d="M6 14v2a10 10 0 0 0 20 0v-2" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-            <path d="M16 26v4" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round"/>
-          </svg>
-        </span>
+        <img src="strospeak-256.png" alt="" width="22" height="22" />
         <span>Stro Speak</span>
       </div>
       <div class="footer__links">
         <a href="#features">Features</a>
         <a href="#how">How it works</a>
         <a href="#faq">FAQ</a>
-        <a href="https://github.com/aaali/strospeak" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/AAALI/Strospeak" target="_blank" rel="noopener">GitHub</a>
       </div>
       <div class="footer__legal">
-        © <span id="year"></span> Stro Speak. Made for people who'd rather talk than type.
+        © <span id="year"></span> Stro Speak. Built on macOS · Speak instead of type.
       </div>
     </div>
   </footer>

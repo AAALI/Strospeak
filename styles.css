@@ -159,6 +159,68 @@ a:hover { color: var(--accent-2); }
   border-radius: 8px;
 }
 
+.nav__icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: block;
+  box-shadow: 0 4px 10px -4px rgba(0,0,0,.6);
+}
+
+/* Apple mark in CTA buttons — optical vertical align */
+.apple-mark {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+  margin-top: -2px;
+}
+
+/* Hero icon — the real app icon, floats above the title */
+.hero__icon {
+  margin: 0 auto 28px;
+  display: block;
+  perspective: 600px;
+}
+
+.hero__icon img {
+  display: block;
+  width: 120px; height: 120px;
+  border-radius: 26px;
+  box-shadow:
+    0 30px 60px -20px rgba(0,0,0,.7),
+    0 0 80px -10px rgba(34,165,238,.35);
+  animation: heroIconFloat 6s ease-in-out infinite;
+}
+
+@keyframes heroIconFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(.6deg); }
+}
+
+/* Dictation mic image (inside hero device) */
+.dictation__mic img {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  display: block;
+  box-shadow: 0 4px 12px -4px rgba(0,0,0,.6);
+}
+
+/* Download card icon */
+.download__icon {
+  width: 96px; height: 96px;
+  border-radius: 22px;
+  margin: 0 auto 22px;
+  display: block;
+  box-shadow:
+    0 20px 50px -16px rgba(0,0,0,.7),
+    0 0 60px -10px rgba(34,165,238,.35);
+}
+
+/* Footer brand image */
+.footer__brand img {
+  border-radius: 5px;
+  display: block;
+}
+
 .nav__links {
   display: flex; gap: 28px;
   font-size: 14px;
@@ -478,15 +540,13 @@ h3 {
 .dictation__mic {
   position: relative;
   width: 72px; height: 72px;
-  border-radius: 50%;
+  border-radius: 16px;
   display: grid; place-items: center;
-  background: rgba(167,139,250,.1);
-  border: 1px solid rgba(167,139,250,.25);
 }
 
 .mic-pulse {
   position: absolute; inset: -2px;
-  border-radius: 50%;
+  border-radius: 16px;
   border: 1px solid rgba(167,139,250,.5);
   animation: micPulse 2s ease-out infinite;
 }
