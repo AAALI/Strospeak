@@ -863,22 +863,24 @@ final class AppState: ObservableObject, @unchecked Sendable {
     /// Returns true if a new dictation session is allowed under the current
     /// tier. Side-effect: sets `quotaExceededReason` for the UI on failure.
     func canStartTranscriptionSession() -> Bool {
-        let tier = subscription.activeTier
-        if usageTracker.canStartNewSession(tier: tier) {
-            quotaExceededReason = nil
-            return true
+        MainActor.assumeIsolated {
+            let tier = subscription.activeTier
+            if usageTracker.canStartNewSession(tier: tier) {
+                quotaExceededReason = nil
+                return true
+            }
+            if tier.isPaid {
+                quotaExceededReason = "You've hit the \(tier.softCapAudioSeconds / 3600)-hour fair-use cap for this month. Usage resets on the 1st."
+            } else {
+                let minutes = (tier.monthlyAudioSecondsLimit ?? 0) / 60
+                quotaExceededReason = "You've used your \(minutes) free minutes this month. Upgrade to Pro for unlimited dictation."
+            }
+            Analytics.capture("quota_exceeded", properties: [
+                "tier": tier.rawValue,
+                "seconds_used": usageTracker.secondsUsedThisPeriod,
+            ])
+            return false
         }
-        if tier.isPaid {
-            quotaExceededReason = "You've hit the \(tier.softCapAudioSeconds / 3600)-hour fair-use cap for this month. Usage resets on the 1st."
-        } else {
-            let minutes = (tier.monthlyAudioSecondsLimit ?? 0) / 60
-            quotaExceededReason = "You've used your \(minutes) free minutes this month. Upgrade to Pro for unlimited dictation."
-        }
-        Analytics.capture("quota_exceeded", properties: [
-            "tier": tier.rawValue,
-            "seconds_used": usageTracker.secondsUsedThisPeriod,
-        ])
-        return false
     }
 
     deinit {
