@@ -3,6 +3,8 @@ import Foundation
 struct GlobalAIServiceConfiguration {
     let apiKey: String
     let baseURL: String
+    let fallbackAPIKey: String
+    let fallbackBaseURL: String
     let transcriptionAPIKey: String
     let transcriptionBaseURL: String
 
@@ -15,6 +17,14 @@ struct GlobalAIServiceConfiguration {
             baseURL: configuredValue(
                 environmentKey: "STRO_SPEAK_AI_BASE_URL",
                 infoDictionaryKey: "StroSpeakAIBaseURL"
+            ),
+            fallbackAPIKey: configuredValue(
+                environmentKey: "STRO_SPEAK_FALLBACK_AI_API_KEY",
+                infoDictionaryKey: "StroSpeakFallbackAIAPIKey"
+            ),
+            fallbackBaseURL: configuredValue(
+                environmentKey: "STRO_SPEAK_FALLBACK_AI_BASE_URL",
+                infoDictionaryKey: "StroSpeakFallbackAIBaseURL"
             ),
             transcriptionAPIKey: configuredValue(
                 environmentKey: "STRO_SPEAK_TRANSCRIPTION_API_KEY",
@@ -64,6 +74,7 @@ struct GlobalAIServiceConfiguration {
             "YOUR_GROQ_API_KEY_HERE",
             "your_api_key_here",
             "$(STRO_SPEAK_AI_API_KEY)",
+            "$(STRO_SPEAK_FALLBACK_AI_API_KEY)",
             "$(STRO_SPEAK_TRANSCRIPTION_API_KEY)"
         ]
 

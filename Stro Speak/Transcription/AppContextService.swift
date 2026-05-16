@@ -54,8 +54,11 @@ For chat or messaging apps, prioritize the current conversation/person, latest v
 
     private let apiKey: String
     private let baseURL: String
+    private let fallbackAPIKey: String
+    private let fallbackBaseURL: String
     private let customContextPrompt: String
     private let contextModel: String
+    private let fallbackContextModel: String
     private let userDisplayName: String
     private let userProfileNote: String
     private let maxScreenshotDataURILength = 500_000
@@ -65,18 +68,29 @@ For chat or messaging apps, prioritize the current conversation/person, latest v
 
     init(
         apiKey: String,
-        baseURL: String = "https://api.groq.com/openai/v1",
+        baseURL: String = "https://api.openai.com/v1",
+        fallbackAPIKey: String = "",
+        fallbackBaseURL: String = "https://api.groq.com/openai/v1",
         customContextPrompt: String = "",
-        contextModel: String = "meta-llama/llama-4-scout-17b-16e-instruct",
+        contextModel: String = "gpt-5.4-nano",
+        fallbackContextModel: String = "meta-llama/llama-4-scout-17b-16e-instruct",
         screenshotMaxDimension: CGFloat = AppContextService.defaultScreenshotMaxDimension,
         userDisplayName: String = "",
         userProfileNote: String = ""
     ) {
         self.apiKey = apiKey
         self.baseURL = baseURL
+        self.fallbackAPIKey = fallbackAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.fallbackBaseURL = fallbackBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "https://api.groq.com/openai/v1"
+            : fallbackBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         self.customContextPrompt = customContextPrompt
         let trimmedModel = contextModel.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.contextModel = trimmedModel.isEmpty ? "meta-llama/llama-4-scout-17b-16e-instruct" : trimmedModel
+        self.contextModel = trimmedModel.isEmpty ? "gpt-5.4-nano" : trimmedModel
+        let trimmedFallbackModel = fallbackContextModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.fallbackContextModel = trimmedFallbackModel.isEmpty
+            ? "meta-llama/llama-4-scout-17b-16e-instruct"
+            : trimmedFallbackModel
         self.userDisplayName = userDisplayName.trimmingCharacters(in: .whitespacesAndNewlines)
         self.userProfileNote = userProfileNote.trimmingCharacters(in: .whitespacesAndNewlines)
         self.screenshotMaxDimension = screenshotMaxDimension > 0
@@ -139,7 +153,7 @@ For chat or messaging apps, prioritize the current conversation/person, latest v
         )
         let currentActivity: String
         let contextPrompt: String?
-        if !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !fallbackAPIKey.isEmpty {
             if let result = await inferActivityWithLLM(
                 appName: appName,
                 bundleIdentifier: bundleIdentifier,
@@ -193,17 +207,20 @@ For chat or messaging apps, prioritize the current conversation/person, latest v
         screenshotDataURL: String?,
         contextSystemPrompt: String
     ) async -> (activity: String, prompt: String)? {
-        let attempts: [(model: String, screenshotDataURL: String?)] =
+        var attempts: [(apiKey: String, baseURL: String, model: String, screenshotDataURL: String?)] = []
+        let primaryKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !primaryKey.isEmpty {
             if let screenshotDataURL {
-                [
-                    (contextModel, screenshotDataURL),
-                    (contextModel, nil)
-                ]
-            } else {
-                [
-                    (contextModel, nil)
-                ]
+                attempts.append((primaryKey, baseURL, contextModel, screenshotDataURL))
             }
+            attempts.append((primaryKey, baseURL, contextModel, nil))
+        }
+        if !fallbackAPIKey.isEmpty {
+            if let screenshotDataURL {
+                attempts.append((fallbackAPIKey, fallbackBaseURL, fallbackContextModel, screenshotDataURL))
+            }
+            attempts.append((fallbackAPIKey, fallbackBaseURL, fallbackContextModel, nil))
+        }
 
         for attempt in attempts {
             if let inferred = await inferActivityWithLLM(
@@ -213,6 +230,8 @@ For chat or messaging apps, prioritize the current conversation/person, latest v
                 selectedText: selectedText,
                 screenshotDataURL: attempt.screenshotDataURL,
                 contextSystemPrompt: contextSystemPrompt,
+                apiKey: attempt.apiKey,
+                baseURL: attempt.baseURL,
                 model: attempt.model
             ) {
                 return inferred
@@ -229,6 +248,8 @@ For chat or messaging apps, prioritize the current conversation/person, latest v
         selectedText: String?,
         screenshotDataURL: String?,
         contextSystemPrompt: String,
+        apiKey: String,
+        baseURL: String,
         model: String
     ) async -> (activity: String, prompt: String)? {
         let traceId = Analytics.newTraceId()

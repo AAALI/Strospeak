@@ -38,6 +38,10 @@
 	<string>$(STRO_SPEAK_AI_API_KEY)</string>
 	<key>StroSpeakAIBaseURL</key>
 	<string>$(STRO_SPEAK_AI_BASE_URL)</string>
+	<key>StroSpeakFallbackAIAPIKey</key>
+	<string>$(STRO_SPEAK_FALLBACK_AI_API_KEY)</string>
+	<key>StroSpeakFallbackAIBaseURL</key>
+	<string>$(STRO_SPEAK_FALLBACK_AI_BASE_URL)</string>
 	<key>StroSpeakTranscriptionAPIKey</key>
 	<string>$(STRO_SPEAK_TRANSCRIPTION_API_KEY)</string>
 	<key>StroSpeakTranscriptionBaseURL</key>

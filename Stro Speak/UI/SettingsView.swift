@@ -41,9 +41,13 @@ private let iso8601DayFormatter: DateFormatter = {
 struct ProviderSettingsFields: View {
     @EnvironmentObject var appState: AppState
     @Binding var apiBaseURLInput: String
+    @Binding var fallbackAPIKeyInput: String
+    @Binding var fallbackAPIBaseURLInput: String
     @Binding var transcriptionAPIURLInput: String
     @Binding var transcriptionAPIKeyInput: String
     @FocusState private var isEditingAPIBaseURL: Bool
+    @FocusState private var isEditingFallbackAPIKey: Bool
+    @FocusState private var isEditingFallbackAPIBaseURL: Bool
     @FocusState private var isEditingTranscriptionModel: Bool
     @FocusState private var isEditingRealtimeStreamingModel: Bool
     @FocusState private var isEditingPostProcessingModel: Bool
@@ -64,6 +68,21 @@ struct ProviderSettingsFields: View {
         let resolvedBaseURL = trimmed.isEmpty ? AppState.defaultAPIBaseURL : trimmed
         apiBaseURLInput = resolvedBaseURL
         appState.apiBaseURL = resolvedBaseURL
+    }
+
+    private func commitFallbackAPIKey() {
+        let trimmed = fallbackAPIKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        fallbackAPIKeyInput = trimmed
+        guard appState.fallbackAPIKey != trimmed else { return }
+        appState.fallbackAPIKey = trimmed
+    }
+
+    private func commitFallbackAPIBaseURL() {
+        let trimmed = fallbackAPIBaseURLInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedBaseURL = trimmed.isEmpty ? "" : trimmed
+        fallbackAPIBaseURLInput = resolvedBaseURL
+        guard appState.fallbackAPIBaseURL != resolvedBaseURL else { return }
+        appState.fallbackAPIBaseURL = resolvedBaseURL
     }
 
     private func commitTranscriptionModel() {
@@ -147,6 +166,54 @@ struct ProviderSettingsFields: View {
 
             if showsModelDescription {
                 Text("If you use another provider, enter that provider's model IDs here.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Fallback Provider")
+                    .font(.caption.weight(.semibold))
+                Text("Optional Groq fallback used when the primary OpenAI-compatible provider is unavailable.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                SecureField("Groq fallback API key", text: $fallbackAPIKeyInput)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced))
+                    .focused($isEditingFallbackAPIKey)
+                    .onSubmit {
+                        commitFallbackAPIKey()
+                    }
+                    .onChange(of: isEditingFallbackAPIKey) { isEditing in
+                        if !isEditing {
+                            commitFallbackAPIKey()
+                        }
+                    }
+
+                HStack(spacing: 8) {
+                    TextField(AppState.defaultFallbackAPIBaseURL, text: $fallbackAPIBaseURLInput)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.body, design: .monospaced))
+                        .focused($isEditingFallbackAPIBaseURL)
+                        .onSubmit {
+                            commitFallbackAPIBaseURL()
+                        }
+                        .onChange(of: isEditingFallbackAPIBaseURL) { isEditing in
+                            if !isEditing {
+                                commitFallbackAPIBaseURL()
+                            }
+                        }
+
+                    Button("Reset to Default") {
+                        fallbackAPIBaseURLInput = ""
+                        appState.fallbackAPIBaseURL = ""
+                    }
+                    .font(.caption)
+                }
+
+                Text("Fallback models: \(AppState.defaultGroqTextFallbackModel) for text and \(AppState.defaultGroqVisionFallbackModel) for screen context.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -554,6 +621,8 @@ struct GeneralSettingsView: View {
     let page: GeneralSettingsPage
     @State private var apiKeyInput: String = ""
     @State private var apiBaseURLInput: String = ""
+    @State private var fallbackAPIKeyInput: String = ""
+    @State private var fallbackAPIBaseURLInput: String = ""
     @State private var transcriptionAPIURLInput: String = ""
     @State private var transcriptionAPIKeyInput: String = ""
     @State private var advancedProviderSettingsExpanded = false
@@ -633,6 +702,8 @@ struct GeneralSettingsView: View {
         .onAppear {
             apiKeyInput = appState.apiKey
             apiBaseURLInput = appState.apiBaseURL
+            fallbackAPIKeyInput = appState.fallbackAPIKey
+            fallbackAPIBaseURLInput = appState.fallbackAPIBaseURL
             transcriptionAPIURLInput = appState.transcriptionAPIURL
             transcriptionAPIKeyInput = appState.transcriptionAPIKey
             customVocabularyInput = appState.customVocabulary
@@ -642,6 +713,16 @@ struct GeneralSettingsView: View {
         .onChange(of: appState.transcriptionAPIURL) { value in
             if transcriptionAPIURLInput != value {
                 transcriptionAPIURLInput = value
+            }
+        }
+        .onChange(of: appState.fallbackAPIKey) { value in
+            if fallbackAPIKeyInput != value {
+                fallbackAPIKeyInput = value
+            }
+        }
+        .onChange(of: appState.fallbackAPIBaseURL) { value in
+            if fallbackAPIBaseURLInput != value {
+                fallbackAPIBaseURLInput = value
             }
         }
         .onChange(of: appState.transcriptionAPIKey) { value in
@@ -1008,12 +1089,12 @@ struct GeneralSettingsView: View {
 
     private var apiKeySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("\(AppName.displayName) uses the configured transcription model with your selected OpenAI-compatible provider.")
+            Text("\(AppName.displayName) uses OpenAI-compatible providers for transcription, screen context, and cleanup.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 8) {
-                SecureField("Enter your Groq API key", text: $apiKeyInput)
+                SecureField("Enter your primary API key", text: $apiKeyInput)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(.body, design: .monospaced))
                     .disabled(isValidatingKey)
@@ -1043,6 +1124,8 @@ struct GeneralSettingsView: View {
                     Divider()
                     ProviderSettingsFields(
                         apiBaseURLInput: $apiBaseURLInput,
+                        fallbackAPIKeyInput: $fallbackAPIKeyInput,
+                        fallbackAPIBaseURLInput: $fallbackAPIBaseURLInput,
                         transcriptionAPIURLInput: $transcriptionAPIURLInput,
                         transcriptionAPIKeyInput: $transcriptionAPIKeyInput,
                         showsModelDescription: false
@@ -1773,6 +1856,11 @@ struct PromptsSettingsView: View {
         let service = PostProcessingService(
             apiKey: appState.apiKey,
             baseURL: appState.apiBaseURL,
+            fallbackAPIKey: appState.fallbackAPIKey,
+            fallbackBaseURL: appState.fallbackAPIBaseURL.isEmpty
+                ? AppState.defaultFallbackAPIBaseURL
+                : appState.fallbackAPIBaseURL,
+            fallbackTextModel: AppState.defaultGroqTextFallbackModel,
             preferredModel: appState.postProcessingModel,
             preferredFallbackModel: appState.postProcessingFallbackModel
         )

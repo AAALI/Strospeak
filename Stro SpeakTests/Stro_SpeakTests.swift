@@ -12,6 +12,8 @@ final class Stro_SpeakTests: XCTestCase {
     override func tearDown() {
         unsetenv("STRO_SPEAK_AI_API_KEY")
         unsetenv("STRO_SPEAK_AI_BASE_URL")
+        unsetenv("STRO_SPEAK_FALLBACK_AI_API_KEY")
+        unsetenv("STRO_SPEAK_FALLBACK_AI_BASE_URL")
         unsetenv("STRO_SPEAK_TRANSCRIPTION_API_KEY")
         unsetenv("STRO_SPEAK_TRANSCRIPTION_BASE_URL")
         super.tearDown()
@@ -46,6 +48,27 @@ final class Stro_SpeakTests: XCTestCase {
 
         XCTAssertEqual(configuration.resolvedTranscriptionAPIKey, "speech-key")
         XCTAssertEqual(configuration.resolvedTranscriptionBaseURL, "https://speech.example.com/openai/v1")
+    }
+
+    func testDefaultProviderModelsUseOpenAIPrimaryAndGroqHybridFallbacks() {
+        XCTAssertEqual(AppState.defaultAPIBaseURL, "https://api.openai.com/v1")
+        XCTAssertEqual(AppState.defaultTranscriptionModel, "gpt-4o-mini-transcribe")
+        XCTAssertEqual(AppState.defaultPostProcessingModel, "gpt-5.4-nano")
+        XCTAssertEqual(AppState.defaultPostProcessingFallbackModel, "gpt-5.4-mini")
+        XCTAssertEqual(AppState.defaultContextModel, "gpt-5.4-nano")
+        XCTAssertEqual(AppState.defaultFallbackAPIBaseURL, "https://api.groq.com/openai/v1")
+        XCTAssertEqual(AppState.defaultGroqTextFallbackModel, "openai/gpt-oss-20b")
+        XCTAssertEqual(AppState.defaultGroqVisionFallbackModel, "meta-llama/llama-4-scout-17b-16e-instruct")
+    }
+
+    func testGlobalAIServiceConfigurationReadsFallbackProviderValues() {
+        setenv("STRO_SPEAK_FALLBACK_AI_API_KEY", " fallback-key ", 1)
+        setenv("STRO_SPEAK_FALLBACK_AI_BASE_URL", " https://fallback.example.com/openai/v1 ", 1)
+
+        let configuration = GlobalAIServiceConfiguration.current
+
+        XCTAssertEqual(configuration.fallbackAPIKey, "fallback-key")
+        XCTAssertEqual(configuration.fallbackBaseURL, "https://fallback.example.com/openai/v1")
     }
 
     func testStructuredContextBlockIncludesAppMetadataAndSummary() {

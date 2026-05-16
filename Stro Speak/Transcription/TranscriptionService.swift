@@ -13,20 +13,20 @@ class TranscriptionService {
 
     init(
         apiKey: String,
-        baseURL: String = "https://api.groq.com/openai/v1",
-        transcriptionModel: String = "whisper-large-v3",
+        baseURL: String = "https://api.openai.com/v1",
+        transcriptionModel: String = "gpt-4o-mini-transcribe",
         language: String? = nil
     ) throws {
         self.apiKey = apiKey
         self.baseURL = try Self.normalizedBaseURL(from: baseURL)
         let trimmedModel = transcriptionModel.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.transcriptionModel = trimmedModel.isEmpty ? "whisper-large-v3" : trimmedModel
+        self.transcriptionModel = trimmedModel.isEmpty ? "gpt-4o-mini-transcribe" : trimmedModel
         let trimmedLanguage = language?.trimmingCharacters(in: .whitespacesAndNewlines)
         self.language = (trimmedLanguage?.isEmpty == false) ? trimmedLanguage : nil
     }
 
     // Validate API key by hitting a lightweight endpoint
-    static func validateAPIKey(_ key: String, baseURL: String = "https://api.groq.com/openai/v1") async -> Bool {
+    static func validateAPIKey(_ key: String, baseURL: String = "https://api.openai.com/v1") async -> Bool {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
         guard let baseURL = try? normalizedBaseURL(from: baseURL) else { return false }

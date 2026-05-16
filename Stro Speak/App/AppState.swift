@@ -196,6 +196,8 @@ final class AppState: ObservableObject, @unchecked Sendable {
 
     private let apiKeyStorageKey = "groq_api_key"
     private let apiBaseURLStorageKey = "api_base_url"
+    private let fallbackAPIKeyStorageKey = "fallback_api_key"
+    private let fallbackAPIBaseURLStorageKey = "fallback_api_base_url"
     private let transcriptionModelStorageKey = "transcription_model"
     private let transcriptionAPIURLStorageKey = "transcription_api_url"
     private let transcriptionAPIKeyStorageKey = "transcription_api_key"
@@ -241,7 +243,7 @@ final class AppState: ObservableObject, @unchecked Sendable {
     let maxPipelineHistoryCount = 20
     static let defaultContextScreenshotMaxDimension = Int(AppContextService.defaultScreenshotMaxDimension)
     static let contextScreenshotDimensionOptions = [1024, 768, 640, 512]
-    static let defaultTranscriptionModel = "whisper-large-v3"
+    static let defaultTranscriptionModel = "gpt-4o-mini-transcribe"
     static let transcriptionLanguageOptions: [(code: String, name: String)] = [
         ("", "Auto-detect"),
         ("en", "English"),
@@ -274,9 +276,12 @@ final class AppState: ObservableObject, @unchecked Sendable {
         ("hu", "Hungarian"),
         ("ca", "Catalan")
     ]
-    static let defaultPostProcessingModel = "openai/gpt-oss-20b"
-    static let defaultPostProcessingFallbackModel = "meta-llama/llama-4-scout-17b-16e-instruct"
-    static let defaultContextModel = "meta-llama/llama-4-scout-17b-16e-instruct"
+    static let defaultPostProcessingModel = "gpt-5.4-nano"
+    static let defaultPostProcessingFallbackModel = "gpt-5.4-mini"
+    static let defaultContextModel = "gpt-5.4-nano"
+    static let defaultFallbackAPIBaseURL = "https://api.groq.com/openai/v1"
+    static let defaultGroqTextFallbackModel = "openai/gpt-oss-20b"
+    static let defaultGroqVisionFallbackModel = "meta-llama/llama-4-scout-17b-16e-instruct"
     private static let trailingPressEnterCommandPattern = try! NSRegularExpression(
         pattern: #"(?i)(?:^|[ \t\r\n,;:\-]+)press[ \t\r\n]+enter[\s\p{P}]*$"#
     )
@@ -301,6 +306,20 @@ final class AppState: ObservableObject, @unchecked Sendable {
     @Published var apiBaseURL: String {
         didSet {
             persistAPIBaseURL(apiBaseURL)
+            rebuildContextService()
+        }
+    }
+
+    @Published var fallbackAPIKey: String {
+        didSet {
+            persistOptionalAPIValue(fallbackAPIKey, account: fallbackAPIKeyStorageKey)
+            rebuildContextService()
+        }
+    }
+
+    @Published var fallbackAPIBaseURL: String {
+        didSet {
+            persistOptionalAPIValue(fallbackAPIBaseURL, account: fallbackAPIBaseURLStorageKey)
             rebuildContextService()
         }
     }
@@ -655,6 +674,8 @@ final class AppState: ObservableObject, @unchecked Sendable {
         let hasCompletedSetup = UserDefaults.standard.bool(forKey: "hasCompletedSetup")
         let apiKey = Self.loadStoredAPIKey(account: apiKeyStorageKey)
         let apiBaseURL = Self.loadStoredAPIBaseURL(account: "api_base_url")
+        let fallbackAPIKey = Self.loadStoredAPIKey(account: fallbackAPIKeyStorageKey)
+        let fallbackAPIBaseURL = Self.loadOptionalStoredAPIValue(account: fallbackAPIBaseURLStorageKey)
         let transcriptionModel = UserDefaults.standard.string(forKey: transcriptionModelStorageKey) ?? Self.defaultTranscriptionModel
         let transcriptionAPIURL = Self.loadOptionalStoredAPIValue(account: transcriptionAPIURLStorageKey)
         let transcriptionAPIKey = Self.loadStoredAPIKey(account: transcriptionAPIKeyStorageKey)
@@ -757,8 +778,19 @@ final class AppState: ObservableObject, @unchecked Sendable {
                 serviceConfiguration: initialServiceConfiguration,
                 allowsDeveloperProviderOverrides: initialAllowsDeveloperProviderOverrides
             ),
+            fallbackAPIKey: Self.resolvedFallbackAPIKey(
+                storedAPIKey: fallbackAPIKey,
+                serviceConfiguration: initialServiceConfiguration,
+                allowsDeveloperProviderOverrides: initialAllowsDeveloperProviderOverrides
+            ),
+            fallbackBaseURL: Self.resolvedFallbackBaseURL(
+                storedBaseURL: fallbackAPIBaseURL,
+                serviceConfiguration: initialServiceConfiguration,
+                allowsDeveloperProviderOverrides: initialAllowsDeveloperProviderOverrides
+            ),
             customContextPrompt: customContextPrompt,
             contextModel: contextModel,
+            fallbackContextModel: Self.defaultGroqVisionFallbackModel,
             contextScreenshotMaxDimension: contextScreenshotMaxDimension,
             userDisplayName: userDisplayName,
             userProfileNote: userProfileNote
@@ -766,6 +798,8 @@ final class AppState: ObservableObject, @unchecked Sendable {
         self.hasCompletedSetup = hasCompletedSetup
         self.apiKey = apiKey
         self.apiBaseURL = apiBaseURL
+        self.fallbackAPIKey = fallbackAPIKey
+        self.fallbackAPIBaseURL = fallbackAPIBaseURL
         self.transcriptionAPIURL = transcriptionAPIURL
         self.transcriptionAPIKey = transcriptionAPIKey
         self.transcriptionModel = transcriptionModel
@@ -871,7 +905,7 @@ final class AppState: ObservableObject, @unchecked Sendable {
         }
     }
 
-    static let defaultAPIBaseURL = "https://api.groq.com/openai/v1"
+    static let defaultAPIBaseURL = "https://api.openai.com/v1"
 
     private struct StoredShortcutConfiguration {
         let hold: ShortcutBinding
@@ -953,8 +987,11 @@ final class AppState: ObservableObject, @unchecked Sendable {
     static func makeAppContextService(
         apiKey: String,
         baseURL: String,
+        fallbackAPIKey: String,
+        fallbackBaseURL: String,
         customContextPrompt: String,
         contextModel: String,
+        fallbackContextModel: String,
         contextScreenshotMaxDimension: Int,
         userDisplayName: String,
         userProfileNote: String
@@ -962,8 +999,11 @@ final class AppState: ObservableObject, @unchecked Sendable {
         AppContextService(
             apiKey: apiKey,
             baseURL: baseURL,
+            fallbackAPIKey: fallbackAPIKey,
+            fallbackBaseURL: fallbackBaseURL,
             customContextPrompt: customContextPrompt,
             contextModel: contextModel,
+            fallbackContextModel: fallbackContextModel,
             screenshotMaxDimension: CGFloat(normalizedContextScreenshotMaxDimension(contextScreenshotMaxDimension)),
             userDisplayName: userDisplayName,
             userProfileNote: userProfileNote
@@ -974,8 +1014,11 @@ final class AppState: ObservableObject, @unchecked Sendable {
         Self.makeAppContextService(
             apiKey: resolvedGeneralAPIKey,
             baseURL: resolvedGeneralBaseURL,
+            fallbackAPIKey: resolvedFallbackAPIKey,
+            fallbackBaseURL: resolvedFallbackBaseURL,
             customContextPrompt: customContextPrompt,
             contextModel: contextModel,
+            fallbackContextModel: Self.defaultGroqVisionFallbackModel,
             contextScreenshotMaxDimension: contextScreenshotMaxDimension,
             userDisplayName: userDisplayName,
             userProfileNote: userProfileNote
@@ -1066,6 +1109,50 @@ final class AppState: ObservableObject, @unchecked Sendable {
             return serviceConfiguration.baseURL
         }
         return stored.isEmpty ? defaultAPIBaseURL : stored
+    }
+
+    private var resolvedFallbackAPIKey: String {
+        Self.resolvedFallbackAPIKey(
+            storedAPIKey: fallbackAPIKey,
+            serviceConfiguration: serviceConfiguration,
+            allowsDeveloperProviderOverrides: allowsDeveloperProviderOverrides
+        )
+    }
+
+    private static func resolvedFallbackAPIKey(
+        storedAPIKey: String,
+        serviceConfiguration: GlobalAIServiceConfiguration,
+        allowsDeveloperProviderOverrides: Bool
+    ) -> String {
+        let stored = storedAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if allowsDeveloperProviderOverrides && !stored.isEmpty {
+            return stored
+        }
+        return serviceConfiguration.fallbackAPIKey.isEmpty ? stored : serviceConfiguration.fallbackAPIKey
+    }
+
+    private var resolvedFallbackBaseURL: String {
+        Self.resolvedFallbackBaseURL(
+            storedBaseURL: fallbackAPIBaseURL,
+            serviceConfiguration: serviceConfiguration,
+            allowsDeveloperProviderOverrides: allowsDeveloperProviderOverrides
+        )
+    }
+
+    private static func resolvedFallbackBaseURL(
+        storedBaseURL: String,
+        serviceConfiguration: GlobalAIServiceConfiguration,
+        allowsDeveloperProviderOverrides: Bool
+    ) -> String {
+        let stored = storedBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if allowsDeveloperProviderOverrides && !stored.isEmpty {
+            return stored
+        }
+        let configured = serviceConfiguration.fallbackBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !configured.isEmpty {
+            return configured
+        }
+        return stored.isEmpty ? defaultFallbackAPIBaseURL : stored
     }
 
     private var resolvedTranscriptionBaseURL: String {
@@ -1248,6 +1335,9 @@ final class AppState: ObservableObject, @unchecked Sendable {
         let postProcessingService = PostProcessingService(
             apiKey: resolvedGeneralAPIKey,
             baseURL: resolvedGeneralBaseURL,
+            fallbackAPIKey: resolvedFallbackAPIKey,
+            fallbackBaseURL: resolvedFallbackBaseURL,
+            fallbackTextModel: Self.defaultGroqTextFallbackModel,
             preferredModel: postProcessingModel,
             preferredFallbackModel: postProcessingFallbackModel
         )
@@ -2571,6 +2661,9 @@ final class AppState: ObservableObject, @unchecked Sendable {
         let postProcessingService = PostProcessingService(
             apiKey: resolvedGeneralAPIKey,
             baseURL: resolvedGeneralBaseURL,
+            fallbackAPIKey: resolvedFallbackAPIKey,
+            fallbackBaseURL: resolvedFallbackBaseURL,
+            fallbackTextModel: Self.defaultGroqTextFallbackModel,
             preferredModel: postProcessingModel,
             preferredFallbackModel: postProcessingFallbackModel
         )

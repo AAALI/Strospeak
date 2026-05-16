@@ -9,7 +9,9 @@ xcodebuild build \
   -project "Stro Speak.xcodeproj" \
   -scheme "Stro Speak" \
   STRO_SPEAK_AI_API_KEY="your_api_key_here" \
-  STRO_SPEAK_AI_BASE_URL="https://api.groq.com/openai/v1"
+  STRO_SPEAK_AI_BASE_URL="https://api.openai.com/v1" \
+  STRO_SPEAK_FALLBACK_AI_API_KEY="your_groq_key_here" \
+  STRO_SPEAK_FALLBACK_AI_BASE_URL="https://api.groq.com/openai/v1"
 ```
 
 Or create a `.env` file (copy from `.env.example`) and use a tool like `dotenv` to load it.
@@ -24,7 +26,9 @@ For App Store distribution, set the API configuration as Xcode Cloud shared envi
 2. Add these shared variables:
    ```
    STRO_SPEAK_AI_API_KEY = your_production_api_key
-   STRO_SPEAK_AI_BASE_URL = https://api.groq.com/openai/v1
+   STRO_SPEAK_AI_BASE_URL = https://api.openai.com/v1
+   STRO_SPEAK_FALLBACK_AI_API_KEY = your_groq_fallback_key
+   STRO_SPEAK_FALLBACK_AI_BASE_URL = https://api.groq.com/openai/v1
    STRO_SPEAK_TRANSCRIPTION_API_KEY = (optional, leave empty if not needed)
    STRO_SPEAK_TRANSCRIPTION_BASE_URL = (optional, leave empty if not needed)
    ```
@@ -53,6 +57,8 @@ The app target uses `Config/SharedEnvironment.xcconfig` as its base configuratio
 ```
 StroSpeakAIAPIKey = "$(STRO_SPEAK_AI_API_KEY)"
 StroSpeakAIBaseURL = "$(STRO_SPEAK_AI_BASE_URL)"
+StroSpeakFallbackAIAPIKey = "$(STRO_SPEAK_FALLBACK_AI_API_KEY)"
+StroSpeakFallbackAIBaseURL = "$(STRO_SPEAK_FALLBACK_AI_BASE_URL)"
 StroSpeakTranscriptionAPIKey = "$(STRO_SPEAK_TRANSCRIPTION_API_KEY)"
 StroSpeakTranscriptionBaseURL = "$(STRO_SPEAK_TRANSCRIPTION_BASE_URL)"
 ```

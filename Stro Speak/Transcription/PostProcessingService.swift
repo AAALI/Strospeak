@@ -135,22 +135,37 @@ Behavior:
 
     private let apiKey: String
     private let baseURL: String
+    private let fallbackAPIKey: String
+    private let fallbackBaseURL: String
+    private let fallbackTextModel: String
     private let preferredModel: String
     private let preferredFallbackModel: String
-    private let defaultModel = "openai/gpt-oss-20b"
-    private let defaultFallbackModel = "meta-llama/llama-4-scout-17b-16e-instruct"
+    private let defaultModel = "gpt-5.4-nano"
+    private let defaultFallbackModel = "gpt-5.4-mini"
+    private let defaultGroqTextFallbackModel = "openai/gpt-oss-20b"
     private let defaultModelReasoningEffort = "low"
     private let postProcessingMaxCompletionTokens = 4096
     private let postProcessingTimeoutSeconds: TimeInterval = 20
 
     init(
         apiKey: String,
-        baseURL: String = "https://api.groq.com/openai/v1",
+        baseURL: String = "https://api.openai.com/v1",
+        fallbackAPIKey: String = "",
+        fallbackBaseURL: String = "https://api.groq.com/openai/v1",
+        fallbackTextModel: String = "openai/gpt-oss-20b",
         preferredModel: String = "",
         preferredFallbackModel: String = ""
     ) {
         self.apiKey = apiKey
         self.baseURL = baseURL
+        self.fallbackAPIKey = fallbackAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.fallbackBaseURL = fallbackBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "https://api.groq.com/openai/v1"
+            : fallbackBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedFallbackTextModel = fallbackTextModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.fallbackTextModel = trimmedFallbackTextModel.isEmpty
+            ? defaultGroqTextFallbackModel
+            : trimmedFallbackTextModel
         self.preferredModel = preferredModel.trimmingCharacters(in: .whitespacesAndNewlines)
         self.preferredFallbackModel = preferredFallbackModel.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -254,45 +269,32 @@ Behavior:
         customSystemPrompt: String = "",
         outputLanguage: String = ""
     ) async throws -> PostProcessingResult {
-        let primaryModel = resolvedPrimaryModel()
-        let retryModel = resolvedRetryModel(for: primaryModel)
-        do {
-            return try await process(
-                transcript: transcript,
-                context: context,
-                model: primaryModel,
-                customVocabulary: customVocabulary,
-                customSystemPrompt: customSystemPrompt,
-                outputLanguage: outputLanguage
-            )
-        } catch let error as PostProcessingError {
-            let shouldFallback: Bool
-            switch error {
-            case .requestFailed(let statusCode, _):
-                shouldFallback = statusCode == 429
-            case .emptyOutput:
-                shouldFallback = true
-            default:
-                shouldFallback = false
-            }
+        let attempts = providerAttempts()
+        var firstError: Error?
 
-            guard shouldFallback else {
-                throw error
+        for attempt in attempts {
+            do {
+                return try await process(
+                    transcript: transcript,
+                    context: context,
+                    apiKey: attempt.apiKey,
+                    baseURL: attempt.baseURL,
+                    model: attempt.model,
+                    customVocabulary: customVocabulary,
+                    customSystemPrompt: customSystemPrompt,
+                    outputLanguage: outputLanguage
+                )
+            } catch {
+                if firstError == nil {
+                    firstError = error
+                }
+                guard shouldTryNextProvider(after: error) else {
+                    throw error
+                }
             }
-
-            guard let retryModel else {
-                throw error
-            }
-
-            return try await process(
-                transcript: transcript,
-                context: context,
-                model: retryModel,
-                customVocabulary: customVocabulary,
-                customSystemPrompt: customSystemPrompt,
-                outputLanguage: outputLanguage
-            )
         }
+
+        throw firstError ?? PostProcessingError.invalidResponse("No post-processing provider configured")
     }
 
     private func processCommandTransformWithFallback(
@@ -302,44 +304,74 @@ Behavior:
         customVocabulary: [String],
         outputLanguage: String = ""
     ) async throws -> PostProcessingResult {
+        let attempts = providerAttempts()
+        var firstError: Error?
+
+        for attempt in attempts {
+            do {
+                return try await processCommandTransform(
+                    selectedText: selectedText,
+                    voiceCommand: voiceCommand,
+                    context: context,
+                    apiKey: attempt.apiKey,
+                    baseURL: attempt.baseURL,
+                    model: attempt.model,
+                    customVocabulary: customVocabulary,
+                    outputLanguage: outputLanguage
+                )
+            } catch {
+                if firstError == nil {
+                    firstError = error
+                }
+                guard shouldTryNextProvider(after: error) else {
+                    throw error
+                }
+            }
+        }
+
+        throw firstError ?? PostProcessingError.invalidResponse("No post-processing provider configured")
+    }
+
+    private struct ProviderAttempt {
+        let apiKey: String
+        let baseURL: String
+        let model: String
+    }
+
+    private func providerAttempts() -> [ProviderAttempt] {
         let primaryModel = resolvedPrimaryModel()
         let retryModel = resolvedRetryModel(for: primaryModel)
-        do {
-            return try await processCommandTransform(
-                selectedText: selectedText,
-                voiceCommand: voiceCommand,
-                context: context,
-                model: primaryModel,
-                customVocabulary: customVocabulary,
-                outputLanguage: outputLanguage
-            )
-        } catch let error as PostProcessingError {
-            let shouldFallback: Bool
-            switch error {
-            case .requestFailed(let statusCode, _):
-                shouldFallback = statusCode == 429
-            case .emptyOutput:
-                shouldFallback = true
-            default:
-                shouldFallback = false
-            }
+        let primaryKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        var attempts: [ProviderAttempt] = []
 
-            guard shouldFallback else {
-                throw error
+        if !primaryKey.isEmpty {
+            attempts.append(ProviderAttempt(apiKey: primaryKey, baseURL: baseURL, model: primaryModel))
+            if let retryModel {
+                attempts.append(ProviderAttempt(apiKey: primaryKey, baseURL: baseURL, model: retryModel))
             }
+        }
 
-            guard let retryModel else {
-                throw error
-            }
+        if !fallbackAPIKey.isEmpty {
+            attempts.append(ProviderAttempt(apiKey: fallbackAPIKey, baseURL: fallbackBaseURL, model: fallbackTextModel))
+        }
 
-            return try await processCommandTransform(
-                selectedText: selectedText,
-                voiceCommand: voiceCommand,
-                context: context,
-                model: retryModel,
-                customVocabulary: customVocabulary,
-                outputLanguage: outputLanguage
-            )
+        return attempts
+    }
+
+    private func shouldTryNextProvider(after error: Error) -> Bool {
+        if error is CancellationError {
+            return false
+        }
+
+        guard let postProcessingError = error as? PostProcessingError else {
+            return true
+        }
+
+        switch postProcessingError {
+        case .requestFailed, .invalidResponse, .emptyOutput, .requestTimedOut:
+            return true
+        case .invalidInput:
+            return false
         }
     }
 
@@ -363,6 +395,8 @@ Behavior:
     private func process(
         transcript: String,
         context: AppContext,
+        apiKey: String,
+        baseURL: String,
         model: String,
         customVocabulary: [String],
         customSystemPrompt: String = "",
@@ -407,23 +441,29 @@ Use these spellings exactly in the output when relevant:
 
         let contextBlock = Self.formattedContextBlock(for: context)
         let userMessage = """
-Instructions: Clean up RAW_TRANSCRIPTION and return only the cleaned transcript text without surrounding quotes. Return EMPTY if there should be no result.
+        Instructions: Clean up RAW_TRANSCRIPTION and return only the cleaned transcript text without surrounding quotes. Return EMPTY if there should be no result.
 
-CONTEXT:
-\(contextBlock)
+        CONTEXT:
+        \(contextBlock)
 
-RAW_TRANSCRIPTION: "\(transcript)"
-"""
+        RAW_TRANSCRIPTION: "\(transcript)"
+        """
+        let userContent = Self.chatMessageContent(
+            text: userMessage,
+            screenshotDataURL: context.screenshotDataURL,
+            model: model
+        )
 
         let promptForDisplay = """
-Model: \(model)
+        Model: \(model)
 
-[System]
-\(systemPrompt)
+        [System]
+        \(systemPrompt)
 
-[User]
-\(userMessage)
-"""
+        [User]
+        \(userMessage)
+        \(Self.supportsVision(model: model) && context.screenshotDataURL != nil ? "\n[Image]\nScreenshot attached" : "")
+        """
 
         var payload: [String: Any] = [
             "model": model,
@@ -435,11 +475,11 @@ Model: \(model)
                 ],
                 [
                     "role": "user",
-                    "content": userMessage
+                    "content": userContent
                 ]
             ]
         ]
-        if model == defaultModel {
+        if model.lowercased().contains("gpt-oss") {
             payload["max_completion_tokens"] = postProcessingMaxCompletionTokens
             payload["reasoning_effort"] = defaultModelReasoningEffort
             payload["include_reasoning"] = false
@@ -518,6 +558,8 @@ Model: \(model)
         selectedText: String,
         voiceCommand: String,
         context: AppContext,
+        apiKey: String,
+        baseURL: String,
         model: String,
         customVocabulary: [String],
         outputLanguage: String = ""
@@ -562,25 +604,31 @@ Use these spellings exactly in the output when relevant:
 
         let contextBlock = Self.formattedContextBlock(for: context)
         let userMessage = """
-Transform SELECTED_TEXT according to VOICE_COMMAND and return only the replacement text.
+        Transform SELECTED_TEXT according to VOICE_COMMAND and return only the replacement text.
 
-CONTEXT:
-\(contextBlock)
+        CONTEXT:
+        \(contextBlock)
 
-VOICE_COMMAND: "\(voiceCommand)"
+        VOICE_COMMAND: "\(voiceCommand)"
 
-SELECTED_TEXT: "\(selectedText)"
-"""
+        SELECTED_TEXT: "\(selectedText)"
+        """
+        let userContent = Self.chatMessageContent(
+            text: userMessage,
+            screenshotDataURL: context.screenshotDataURL,
+            model: model
+        )
 
         let promptForDisplay = """
-Model: \(model)
+        Model: \(model)
 
-[System]
-\(systemPrompt)
+        [System]
+        \(systemPrompt)
 
-[User]
-\(userMessage)
-"""
+        [User]
+        \(userMessage)
+        \(Self.supportsVision(model: model) && context.screenshotDataURL != nil ? "\n[Image]\nScreenshot attached" : "")
+        """
 
         var payload: [String: Any] = [
             "model": model,
@@ -592,11 +640,11 @@ Model: \(model)
                 ],
                 [
                     "role": "user",
-                    "content": userMessage
+                    "content": userContent
                 ]
             ]
         ]
-        if model == defaultModel {
+        if model.lowercased().contains("gpt-oss") {
             payload["max_completion_tokens"] = postProcessingMaxCompletionTokens
             payload["reasoning_effort"] = defaultModelReasoningEffort
             payload["include_reasoning"] = false
@@ -669,6 +717,39 @@ Model: \(model)
             transcript: sanitizedTranscript,
             prompt: promptForDisplay
         )
+    }
+
+    private static func supportsVision(model: String) -> Bool {
+        let normalized = model.lowercased()
+        if normalized.contains("gpt-oss") || normalized.contains("whisper") {
+            return false
+        }
+        return normalized.contains("gpt-5")
+            || normalized.contains("gpt-4")
+            || normalized.contains("llama-4")
+            || normalized.contains("vision")
+            || normalized.contains("scout")
+    }
+
+    private static func chatMessageContent(
+        text: String,
+        screenshotDataURL: String?,
+        model: String
+    ) -> Any {
+        guard supportsVision(model: model), let screenshotDataURL else {
+            return text
+        }
+
+        return [
+            [
+                "type": "text",
+                "text": text
+            ],
+            [
+                "type": "image_url",
+                "image_url": ["url": screenshotDataURL]
+            ]
+        ]
     }
 
     static func applyOutputLanguage(_ prompt: String, language: String) -> String {
