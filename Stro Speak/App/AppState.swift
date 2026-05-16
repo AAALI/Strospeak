@@ -618,6 +618,7 @@ final class AppState: ObservableObject, @unchecked Sendable {
     let hotkeyManager = HotkeyManager()
     let overlayManager = RecordingOverlayManager()
     private var accessibilityTimer: Timer?
+    private var activeAccessibilityAlert: NSAlert?
     private var audioLevelCancellable: AnyCancellable?
     private var debugOverlayTimer: Timer?
     private var recordingInitializationTimer: DispatchSourceTimer?
@@ -1361,6 +1362,9 @@ final class AppState: ObservableObject, @unchecked Sendable {
             DispatchQueue.main.async {
                 self?.hasAccessibility = AXIsProcessTrusted()
                 self?.hasScreenRecordingPermission = self?.hasScreenCapturePermission() ?? false
+                if self?.hasAccessibility == true {
+                    self?.dismissAccessibilityAlertIfNeeded()
+                }
             }
         }
     }
@@ -2304,6 +2308,9 @@ final class AppState: ObservableObject, @unchecked Sendable {
     }
 
     func showAccessibilityAlert() {
+        if AXIsProcessTrusted() { return }
+        if activeAccessibilityAlert != nil { return }
+
         let alert = NSAlert()
         alert.messageText = "Accessibility Permission Required"
         alert.informativeText = "\(AppName.displayName) cannot type transcriptions without Accessibility access.\n\nGo to System Settings > Privacy & Security > Accessibility and enable \(AppName.displayName)."
@@ -2312,10 +2319,18 @@ final class AppState: ObservableObject, @unchecked Sendable {
         alert.addButton(withTitle: "Dismiss")
         alert.icon = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: nil)
 
+        activeAccessibilityAlert = alert
         let response = alert.runModal()
+        activeAccessibilityAlert = nil
+
         if response == .alertFirstButtonReturn {
             openAccessibilitySettings()
         }
+    }
+
+    private func dismissAccessibilityAlertIfNeeded() {
+        guard activeAccessibilityAlert != nil else { return }
+        NSApp.stopModal(withCode: .abort)
     }
 
     private func precomputeMacros() {
